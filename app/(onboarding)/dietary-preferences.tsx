@@ -1,0 +1,160 @@
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useTheme } from '../../hooks/useTheme';
+import { StyledTextInput } from '../../components/StyledTextInput';
+import { StyledButton } from '../../components/StyledButton';
+import { StyledText } from '../../components/StyledText';
+import { StyledPicker } from '../../components/StyledPicker';
+import { GlobalStyles } from '../../constants/GlobalStyles';
+import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const activityLevels = [
+    { label: 'Light (little to no exercise)', value: 'light' },
+    { label: 'Moderate (exercise 3-5 days/week)', value: 'moderate' },
+    { label: 'High (intense exercise 6-7 days/week)', value: 'high' },
+];
+
+const dietTypes = [
+    { label: 'Gain Muscle', value: 'mass_gain' },
+    { label: 'Fat Loss', value: 'fat_loss' },
+    { label: 'Maintenance', value: 'maintenance' },
+];
+
+interface UserDetails {
+    weight: string;
+    height: string;
+    age: string;
+    gender: string;
+}
+
+export default function DietaryPreferencesScreen() {
+    const [dietaryRestrictions, setDietaryRestrictions] = useState('');
+    const [foodPreferences, setFoodPreferences] = useState('');
+    const [eatingRoutine, setEatingRoutine] = useState('');
+    const [activityLevel, setActivityLevel] = useState<string | undefined>(undefined);
+    const [dietType, setDietType] = useState<string | undefined>(undefined);
+    const [error, setError] = useState('');
+
+    const router = useRouter();
+    const { colors } = useTheme();
+
+    const handleFinish = async () => {
+        setError('');
+        if (!activityLevel || !dietType) {
+            setError('Please fill in all fields.');
+            return;
+        }
+
+        try {
+            const userDetailsString = await AsyncStorage.getItem('userDetails');
+            if (!userDetailsString) {
+                throw new Error('User details not found. Please go back.');
+            }
+            const userDetails: UserDetails = JSON.parse(userDetailsString);
+
+            const dietRequestBody = {
+                height: userDetails.height,
+                weight: userDetails.weight,
+                age: userDetails.age,
+                gender: userDetails.gender,
+                dietary_preferences: foodPreferences,
+                dietary_restrictions: dietaryRestrictions,
+                eating_routine: eatingRoutine,
+                activity_frequency: activityLevel,
+                diet_type: dietType,
+            };
+
+            // Navigate to the loading screen, passing the data
+            router.push({
+                pathname: '/(onboarding)/generating-diet',
+                params: { dietRequestBody: JSON.stringify(dietRequestBody) },
+            });
+
+        } catch(e: any) {
+            setError(e.message || 'An error occurred preparing your data.');
+            console.error("Failed to prepare data for diet generation:", e);
+        }
+    };
+
+    return (
+        <KeyboardAvoidingWrapper style={{backgroundColor: colors.appBackground}}>
+            <View style={[GlobalStyles.container, { backgroundColor: colors.appBackground }]}>
+                <StyledText type="title" style={[GlobalStyles.title, styles.title, { color: colors.text }]}>
+                    Your Goals
+                </StyledText>
+                <StyledText type="subtitle" style={[styles.subtitle, { color: colors.text }]}>
+                    Help us tailor your nutrition plan.
+                </StyledText>
+
+                <StyledPicker
+                    label="What is your main goal?"
+                    items={dietTypes}
+                    selectedValue={dietType}
+                    onValueChange={(value) => setDietType(value as string)}
+                    placeholder="Select your diet type"
+                />
+
+                <StyledTextInput
+                    label="Dietary Restrictions (e.g., allergies, intolerances)"
+                    placeholder="Peanuts, gluten-free, lactose intolerant"
+                    value={dietaryRestrictions}
+                    onChangeText={setDietaryRestrictions}
+                    multiline
+                    numberOfLines={3}
+                    containerStyle={{height: 100}}
+                    style={{height: 80, textAlignVertical: 'top'}}
+                />
+                <StyledTextInput
+                    label="Food Preferences (favorite foods or cuisines)"
+                    placeholder="Italian, Mexican, chicken, broccoli"
+                    value={foodPreferences}
+                    onChangeText={setFoodPreferences}
+                    multiline
+                    numberOfLines={3}
+                    containerStyle={{height: 100}}
+                    style={{height: 80, textAlignVertical: 'top'}}
+                />
+                <StyledTextInput
+                    label="Typical Eating Routine"
+                    placeholder="e.g., Breakfast at 8 AM, Lunch at 1 PM, Dinner at 7 PM"
+                    value={eatingRoutine}
+                    onChangeText={setEatingRoutine}
+                    multiline
+                    numberOfLines={3}
+                    containerStyle={{height: 100}}
+                    style={{height: 80, textAlignVertical: 'top'}}
+                />
+                <StyledPicker
+                    label="Physical Activity Frequency"
+                    items={activityLevels}
+                    selectedValue={activityLevel}
+                    onValueChange={(value) => setActivityLevel(value as string)}
+                    placeholder="Select your activity level"
+                />
+
+                {error ? <StyledText type="error" style={GlobalStyles.errorText}>{error}</StyledText> : null}
+
+                <StyledButton
+                    title="Generate My Diet" // Updated button text
+                    onPress={handleFinish}
+                    style={styles.finishButton}
+                />
+            </View>
+        </KeyboardAvoidingWrapper>
+    );
+}
+
+const styles = StyleSheet.create({
+    title: {
+        marginBottom: 5,
+    },
+    subtitle: {
+        marginBottom: 25,
+        fontSize: 16,
+    },
+    finishButton: {
+        marginTop: 20,
+    },
+});
