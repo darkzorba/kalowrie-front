@@ -14,18 +14,18 @@ const InitialLayout = () => {
 
     useEffect(() => {
         if (initialLoading) {
-            return; // Wait until the auth state is loaded
+            return;
         }
 
         if (!user) {
-            // If the user is not signed in, redirect to the login screen.
+
             router.replace('/(auth)/login');
         } else if (user && !isOnboarded) {
-            // If the user is signed in but not onboarded (is_first_access: true),
-            // redirect to the onboarding flow.
+
+
             router.replace('/(onboarding)/user-details');
         } else if (user && isOnboarded) {
-            // If the user is signed in and onboarded, redirect to the main app.
+
             router.replace('/(app)/home');
         }
     }, [user, isOnboarded, initialLoading]);
@@ -36,8 +36,8 @@ const InitialLayout = () => {
         }
     }, [initialLoading]);
 
-    // While the useEffect is determining the route, we can show a loader
-    // or just let the native splash screen stay visible.
+
+
     if (initialLoading) {
         return (
             <View style={[styles.loaderContainer, { backgroundColor: colors.appBackground }]}>

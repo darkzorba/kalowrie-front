@@ -50,20 +50,20 @@ const request = async <T>(
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
     body?: any,
-    isAuthenticated: boolean = true // Default to true for most post-login requests
+    isFormData: boolean = false
 ): Promise<T> => {
     const headers: HeadersInit = {
-        'Content-Type': 'application/json',
         'Accept': 'application/json',
     };
 
-    if (isAuthenticated) {
-        const token = await getToken();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        } else {
-            console.warn('Authenticated request made without a token.');
-        }
+    const token = await getToken();
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+
+    if (!isFormData) {
+        headers['Content-Type'] = 'application/json';
     }
 
     const config: RequestInit = {
@@ -72,13 +72,13 @@ const request = async <T>(
     };
 
     if (body) {
-        config.body = JSON.stringify(body);
+        config.body = isFormData ? body : JSON.stringify(body);
     }
 
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-        if (response.status === 204) { // Handle No Content success response
+        if (response.status === 204) {
             return {} as T;
         }
 

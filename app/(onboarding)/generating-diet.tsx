@@ -2,12 +2,12 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth} from '../../contexts/AuthContext';
 import { StyledText } from '../../components/StyledText';
 import { StyledButton } from '../../components/StyledButton';
 import apiService from '../../services/apiService';
 
-const FRUITS = ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍑', '🍍', '🥝'];
+
 const MESSAGES = [
     'Gathering fresh ingredients...',
     'Consulting with our AI nutritionists...',
@@ -17,6 +17,14 @@ const MESSAGES = [
     'Finalizing your personalized diet...'
 ];
 
+const BouncingFruit = ({ yAnim, emoji }: { yAnim: Animated.Value, emoji: string }) => {
+    return (
+        <Animated.Text style={[styles.fruitLoader, { transform: [{ translateY: yAnim }] }]}>
+            {emoji}
+        </Animated.Text>
+    );
+};
+
 export default function GeneratingDietScreen() {
     const params = useLocalSearchParams();
     const router = useRouter();
@@ -24,51 +32,50 @@ export default function GeneratingDietScreen() {
     const { completeOnboarding } = useAuth();
 
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-    const [currentFruitIndex, setCurrentFruitIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const hasRequested = useRef(false);
-    const fadeAnim = useRef(new Animated.Value(1)).current;
-    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const yAnim1 = useRef(new Animated.Value(0)).current;
+    const yAnim2 = useRef(new Animated.Value(0)).current;
+    const yAnim3 = useRef(new Animated.Value(0)).current;
+    const yAnim4 = useRef(new Animated.Value(0)).current;
+    const yAnim5 = useRef(new Animated.Value(0)).current;
 
-    // Animation for the fruit loader
     useEffect(() => {
         if (!isLoading) return;
 
-        const fruitInterval = setInterval(() => {
-            Animated.sequence([
-                Animated.timing(fadeAnim, {
+        const createBounceAnimation = (animValue: Animated.Value) => {
+            return Animated.sequence([
+                Animated.timing(animValue, {
+                    toValue: -15,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animValue, {
                     toValue: 0,
-                    duration: 300,
+                    duration: 400,
                     useNativeDriver: true,
                 }),
-                Animated.timing(scaleAnim, {
-                    toValue: 0.5,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-            ]).start(() => {
-                setCurrentFruitIndex(prevIndex => (prevIndex + 1) % FRUITS.length);
-                Animated.sequence([
-                    Animated.timing(scaleAnim, {
-                        toValue: 1,
-                        duration: 300,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(fadeAnim, {
-                        toValue: 1,
-                        duration: 300,
-                        useNativeDriver: true,
-                    }),
-                ]).start();
-            });
-        }, 1200);
+            ]);
+        };
 
-        return () => clearInterval(fruitInterval);
+        const anims = [
+            { loop: Animated.loop(createBounceAnimation(yAnim1)), delay: 0 },
+            { loop: Animated.loop(createBounceAnimation(yAnim2)), delay: 150 },
+            { loop: Animated.loop(createBounceAnimation(yAnim3)), delay: 300 },
+            { loop: Animated.loop(createBounceAnimation(yAnim4)), delay: 450 },
+            { loop: Animated.loop(createBounceAnimation(yAnim5)), delay: 600 },
+        ];
+
+        const timeouts = anims.map(anim => setTimeout(() => anim.loop.start(), anim.delay));
+
+        return () => {
+            anims.forEach(anim => anim.loop.stop());
+            timeouts.forEach(clearTimeout);
+        };
     }, [isLoading]);
 
-    // Animation for the text messages
     useEffect(() => {
         if (!isLoading) return;
 
@@ -79,7 +86,6 @@ export default function GeneratingDietScreen() {
         return () => clearInterval(messageInterval);
     }, [isLoading]);
 
-    // Effect to trigger the API request only once
     useEffect(() => {
         if (hasRequested.current) return;
         hasRequested.current = true;
@@ -93,13 +99,13 @@ export default function GeneratingDietScreen() {
 
             try {
                 const dietRequestBody = JSON.parse(params.dietRequestBody);
-                const dietResponse = await apiService('/ai/get/diet', 'POST', dietRequestBody);
+                const dietResponse = await apiService('/ai/generate/diet', 'POST', dietRequestBody);
 
-                console.log('Diet plan received:', dietResponse);
-                // await AsyncStorage.setItem('dietPlan', JSON.stringify(dietResponse));
+                router.replace({
+                    pathname: '/(onboarding)/view-diet',
+                    params: { dietData: JSON.stringify(dietResponse.meals_list) }
+                });
 
-                await completeOnboarding();
-                router.replace('/(app)/home');
             } catch (e: any) {
                 const errorMessage = e.data?.message || e.message || 'An error occurred while generating your diet.';
                 setError(errorMessage);
@@ -115,11 +121,13 @@ export default function GeneratingDietScreen() {
             <View style={styles.content}>
                 {isLoading && (
                     <>
-                        <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-                            <StyledText style={styles.fruitLoader}>
-                                {FRUITS[currentFruitIndex]}
-                            </StyledText>
-                        </Animated.View>
+                        <View style={styles.loaderContainer}>
+                            <BouncingFruit yAnim={yAnim1} emoji="🍎" />
+                            <BouncingFruit yAnim={yAnim2} emoji="🍌" />
+                            <BouncingFruit yAnim={yAnim3} emoji="🍓" />
+                            <BouncingFruit yAnim={yAnim4} emoji="🥝" />
+                            <BouncingFruit yAnim={yAnim5} emoji="🍇" />
+                        </View>
                         <StyledText type="title" style={[styles.title, { color: colors.text }]}>
                             Generating Your Diet
                         </StyledText>
@@ -157,9 +165,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: '100%',
     },
+    loaderContainer: {
+        flexDirection: 'row',
+        marginBottom: 40,
+    },
     fruitLoader: {
-        fontSize: 80,
-        marginBottom: 30,
+        fontSize: 40,
+        marginHorizontal: 8,
     },
     title: {
         fontSize: 28,
@@ -170,7 +182,7 @@ const styles = StyleSheet.create({
     message: {
         fontSize: 18,
         textAlign: 'center',
-        height: 50, // Reserve space to prevent layout shifts
+        height: 50,
         paddingHorizontal: 10,
     },
 });

@@ -40,6 +40,7 @@ export default function OnboardingLayout() {
             <Stack.Screen name="user-details" options={{ title: 'Your Details' }} />
             <Stack.Screen name="dietary-preferences" options={{ title: 'Your Goals' }} />
             <Stack.Screen name="generating-diet" options={{ headerShown: false }} />
+            <Stack.Screen name="view-diet" options={{ title: 'Your Diet Plan' }} />
         </Stack>
     );
 }

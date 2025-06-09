@@ -5,8 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 const IndexScreen = () => {
     const { colors } = useTheme();
 
-    // This screen only shows for a moment while the root layout decides where to redirect.
-    // It effectively acts as a splash/loading screen.
+
     return (
         <View style={[styles.loaderContainer, { backgroundColor: colors.appBackground }]}>
             <ActivityIndicator size="large" color={colors.primary} />

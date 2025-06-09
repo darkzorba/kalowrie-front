@@ -66,7 +66,7 @@ export default function DietaryPreferencesScreen() {
                 diet_type: dietType,
             };
 
-            // Navigate to the loading screen, passing the data
+
             router.push({
                 pathname: '/(onboarding)/generating-diet',
                 params: { dietRequestBody: JSON.stringify(dietRequestBody) },
@@ -137,7 +137,7 @@ export default function DietaryPreferencesScreen() {
                 {error ? <StyledText type="error" style={GlobalStyles.errorText}>{error}</StyledText> : null}
 
                 <StyledButton
-                    title="Generate My Diet" // Updated button text
+                    title="Generate My Diet"
                     onPress={handleFinish}
                     style={styles.finishButton}
                 />

@@ -40,7 +40,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps): ReactElement =>
     );
 };
 
-// Moved useTheme hook here and exporting it
+
 export const useTheme = () => {
     const context = useContext(ThemeContext);
     if (context === undefined) {

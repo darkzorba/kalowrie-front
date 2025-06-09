@@ -8,12 +8,16 @@ interface User {
     username?: string;
     firstName?: string;
     lastName?: string;
+    email: string | null;
+    dietId: number | null;
 }
 
 interface DecodedToken {
     id: string;
     username: string;
     first_name: string;
+    email: string | null;
+    diet_id: number | null;
     last_name: string;
     is_first_access: boolean;
     exp: number;
@@ -22,12 +26,6 @@ interface DecodedToken {
 
 interface AuthResponse {
     access: string;
-}
-
-interface UserCreateResponse {
-    message: string;
-    user: User;
-    token?: string;
 }
 
 interface AuthContextType {
@@ -39,6 +37,7 @@ interface AuthContextType {
     signOut: () => Promise<void>;
     isOnboarded: boolean;
     completeOnboarding: () => Promise<void>;
+    setDietId: (dietId: number) => Promise<void>;
     initialLoading: boolean;
 }
 
@@ -52,21 +51,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isOnboarded, setIsOnboarded] = useState(false);
 
     const processToken = async (authToken: string) => {
-        console.log(authToken);
         const decoded: DecodedToken = jwtDecode(authToken);
-        console.log(decoded)
         const currentUser: User = {
             id: decoded.id,
             username: decoded.username,
             firstName: decoded.first_name,
             lastName: decoded.last_name,
+            email: decoded.email,
+            dietId: decoded.diet_id
         };
         setUser(currentUser);
         setToken(authToken);
-        setIsOnboarded(!decoded.is_first_access); // Onboarded if it's NOT the first access
+        setIsOnboarded(!decoded.is_first_access);
         await storeToken(authToken);
         await AsyncStorage.setItem('user', JSON.stringify(currentUser));
         await AsyncStorage.setItem('isOnboarded', JSON.stringify(!decoded.is_first_access));
+    };
+
+
+    const setDietId = async (dietId: number) => {
+        if (user) {
+            const updatedUser = { ...user, dietId: dietId };
+            setUser(updatedUser);
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        }
     };
 
     useEffect(() => {
@@ -76,15 +84,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const storedToken = await getToken();
                 if (storedToken) {
                     const decoded: DecodedToken = jwtDecode(storedToken);
-                    if (decoded.exp * 1000 > Date.now()) { // Check if token is not expired
+                    if (decoded.exp * 1000 > Date.now()) {
                         await processToken(storedToken);
                     } else {
-                        await signOut(); // Token is expired, clear session
+                        await signOut();
                     }
                 }
             } catch (e) {
                 console.error("Failed to load auth data from storage", e);
-                await signOut(); // If any error in loading, sign out for safety
+                await signOut();
             } finally {
                 setInitialLoading(false);
             }
@@ -98,11 +106,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await apiService<AuthResponse>('/login', 'POST', { username, password }, false);
             await processToken(response.access);
-            setIsLoading(false);
         } catch (error: any) {
-            setIsLoading(false);
-            const displayMessage = error.data?.message || error.data?.error || error.message || "Login failed.";
+            const displayMessage = error.data?.message || error.message || "Login failed.";
             throw new Error(displayMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -114,11 +122,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (response.access) {
                 await processToken(response.access);
             }
-            setIsLoading(false);
         } catch (error: any) {
-            setIsLoading(false);
-            const displayMessage = error.data?.message || error.data?.error || error.message || "Registration failed.";
+            const displayMessage = error.data?.message || error.message || "Registration failed.";
             throw new Error(displayMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -133,18 +141,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const completeOnboarding = async () => {
         try {
-            // This endpoint should update the user's 'is_first_access' to false on the backend.
-            await apiService('/user/complete-onboarding', 'POST');
-            setIsOnboarded(true); // Update state locally
+            setIsOnboarded(true);
             await AsyncStorage.setItem('isOnboarded', JSON.stringify(true));
         } catch (error) {
             console.error("Failed to complete onboarding on the server", error);
-            // Optionally handle the error, e.g., by showing a message to the user
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, isLoading, signIn, signUp, signOut, isOnboarded, completeOnboarding, initialLoading }}>
+        <AuthContext.Provider value={{ user, token, isLoading, signIn, signUp, signOut, isOnboarded, completeOnboarding, setDietId, initialLoading }}>
             {children}
         </AuthContext.Provider>
     );

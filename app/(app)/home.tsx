@@ -1,84 +1,181 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { useTheme } from '../../hooks/useTheme';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { Calendar, DateData } from 'react-native-calendars';
+import { useTheme } from '../../contexts/ThemeContext';
 import { StyledText } from '../../components/StyledText';
-import { GlobalStyles } from '../../constants/GlobalStyles';
 import { useAuth } from '../../contexts/AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiService from '../../services/apiService';
+import { ProgressCard } from '../../components/ProgressCard';
+import { MainProgressCard } from '../../components/MainProgressCard';
+import { Ionicons } from '@expo/vector-icons';
 
-interface UserDetails {
-    weight?: string;
-    height?: string;
-    age?: string;
-    gender?: string;
-}
+interface ProgressData {
+    cards_dict:{
+    total_proteins: number;
+    total_kcals: number;
+    total_carbs: number;
+    total_fats: number;
+    kcals_goal: number;
+    fats_goal: number;
+    proteins_goal: number;
+    carbs_goal: number;
+}}
 
-interface DietaryPreferences {
-    dietaryRestrictions?: string;
-    foodPreferences?: string;
-    eatingRoutine?: string;
-    activityLevel?: string;
-}
+const formatDate = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
 
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+};
+
+const formatDateForAPI = (date: Date) => {
+    return date.toISOString().split('T')[0];
+};
 
 export default function HomeScreen() {
     const { colors } = useTheme();
     const { user } = useAuth();
-    const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
-    const [dietaryPrefs, setDietaryPrefs] = useState<DietaryPreferences | null>(null);
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const detailsStr = await AsyncStorage.getItem('userDetails');
-                if (detailsStr) setUserDetails(JSON.parse(detailsStr));
+    const [progressData, setProgressData] = useState<ProgressData | null>(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isCalendarVisible, setCalendarVisible] = useState(false);
 
-                const prefsStr = await AsyncStorage.getItem('dietaryPreferences');
-                if (prefsStr) setDietaryPrefs(JSON.parse(prefsStr));
-            } catch (e) {
-                console.error("Failed to load data for home screen", e);
-            }
-        };
-        loadData();
-    }, []);
+    const selectedDateString = useMemo(() => formatDateForAPI(selectedDate), [selectedDate]);
+
+    useFocusEffect(
+        useCallback(() => {
+            const fetchProgressData = async () => {
+                setIsLoading(true);
+                setError(null);
+                try {
+                    const data = await apiService<ProgressData>(`/user/diet/get/cards?date=${selectedDateString}`, 'GET');
+                    setProgressData(data);
+                } catch (e: any) {
+                    const errorMessage = e.data?.message || e.message || "Could not load progress for this date.";
+                    setError(errorMessage);
+                    setProgressData(null);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchProgressData();
+        }, [selectedDateString])
+    );
+
+    const onDayPress = (day: DateData) => {
+        setSelectedDate(new Date(day.timestamp));
+        setCalendarVisible(false);
+    };
+
+    const changeDate = (amount: number) => {
+        setSelectedDate(currentDate => {
+            const newDate = new Date(currentDate);
+            newDate.setDate(newDate.getDate() + amount);
+            return newDate > new Date() ? currentDate : newDate;
+        });
+    };
+
+    const getGreeting = () => {
+        if (user?.firstName) return `Welcome, ${user.firstName}!`;
+        return `Welcome, ${user?.email || 'User'}!`;
+    };
+
+    const markedDates = {
+        [selectedDateString]: {
+            selected: true,
+            selectedColor: colors.primary,
+        }
+    };
+
+    const calendarTheme = {
+        backgroundColor: colors.card,
+        calendarBackground: colors.card,
+        textSectionTitleColor: colors.placeholderText,
+        selectedDayBackgroundColor: colors.primary,
+        selectedDayTextColor: '#ffffff',
+        todayTextColor: colors.primary,
+        dayTextColor: colors.text,
+        textDisabledColor: colors.disabled,
+        arrowColor: colors.primary,
+        monthTextColor: colors.text,
+        textDayFontWeight: '300',
+        textMonthFontWeight: 'bold',
+        textDayHeaderFontWeight: '300',
+        textDayFontSize: 16,
+        textMonthFontSize: 16,
+        textDayHeaderFontSize: 16,
+    };
 
     return (
         <ScrollView style={[styles.container, { backgroundColor: colors.appBackground }]}>
             <View style={styles.contentContainer}>
-                <StyledText type="title" style={[GlobalStyles.title, styles.greeting, { color: colors.text }]}>
-                    Welcome, {user?.email || 'User'}!
-                </StyledText>
-                <StyledText type="subtitle" style={[styles.subtitle, { color: colors.text }]}>
-                    This is your personalized nutrition dashboard.
+                <StyledText type="title" style={[styles.greeting, { color: colors.text }]}>
+                    {getGreeting()}
                 </StyledText>
 
-                <View style={[styles.card, {backgroundColor: colors.card}]}>
-                    <StyledText type="subtitle" style={[styles.cardTitle, {color: colors.text}]}>Your Profile</StyledText>
-                    {userDetails ? (
-                        <>
-                            <StyledText style={styles.cardText}>Weight: {userDetails.weight} kg</StyledText>
-                            <StyledText style={styles.cardText}>Height: {userDetails.height} cm</StyledText>
-                            <StyledText style={styles.cardText}>Age: {userDetails.age} years</StyledText>
-                            <StyledText style={styles.cardText}>Gender: {userDetails.gender}</StyledText>
-                        </>
-                    ) : <StyledText style={styles.cardText}>Loading profile...</StyledText>}
+                <View style={[styles.datePickerContainer, { backgroundColor: colors.card }]}>
+                    <TouchableOpacity onPress={() => changeDate(-1)} style={styles.arrowButton}>
+                        <Ionicons name="chevron-back" size={26} color={colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setCalendarVisible(true)} style={styles.datePickerButton}>
+                        <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                        <StyledText style={[styles.dateText, { color: colors.text }]}>{formatDate(selectedDate)}</StyledText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => changeDate(1)} style={styles.arrowButton} disabled={new Date().toDateString() === selectedDate.toDateString()}>
+                        <Ionicons name="chevron-forward" size={26} color={new Date().toDateString() === selectedDate.toDateString() ? colors.disabled : colors.primary} />
+                    </TouchableOpacity>
                 </View>
 
-                <View style={[styles.card, {backgroundColor: colors.card}]}>
-                    <StyledText type="subtitle" style={[styles.cardTitle, {color: colors.text}]}>Nutrition Preferences</StyledText>
-                    {dietaryPrefs ? (
-                        <>
-                            <StyledText style={styles.cardText}>Restrictions: {dietaryPrefs.dietaryRestrictions || 'None'}</StyledText>
-                            <StyledText style={styles.cardText}>Preferences: {dietaryPrefs.foodPreferences || 'None'}</StyledText>
-                            <StyledText style={styles.cardText}>Routine: {dietaryPrefs.eatingRoutine || 'Not set'}</StyledText>
-                            <StyledText style={styles.cardText}>Activity: {dietaryPrefs.activityLevel}</StyledText>
-                        </>
-                    ) : <StyledText style={styles.cardText}>Loading preferences...</StyledText>}
-                </View>
+                <Modal
+                    animationType="fade"
+                    transparent={true}
+                    visible={isCalendarVisible}
+                    onRequestClose={() => setCalendarVisible(false)}
+                >
+                    <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setCalendarVisible(false)}>
+                        <View style={styles.modalContent}>
+                            <Calendar
+                                current={selectedDateString}
+                                onDayPress={onDayPress}
+                                markedDates={markedDates}
+                                maxDate={formatDateForAPI(new Date())}
+                                theme={calendarTheme}
+                            />
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
 
-                <StyledText style={[styles.placeholder, {color: colors.placeholderText}]}>
-                    Future content like meal plans, progress tracking, and recipes will appear here.
-                </StyledText>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
+                ) : error ? (
+                    <View style={styles.centeredMessage}>
+                        <StyledText type="error">{error}</StyledText>
+                    </View>
+                ) : progressData ? (
+                    <>
+                        <MainProgressCard label="Calories" consumed={progressData.cards_dict.total_kcals} goal={progressData.cards_dict.kcals_goal} color="#F97316" unit="kcal" />
+                        <View style={styles.cardsContainer}>
+                            <ProgressCard label="Protein" consumed={progressData.cards_dict.total_proteins} goal={progressData.cards_dict.proteins_goal} color="#3B82F6" unit="g" />
+                            <ProgressCard label="Carbs" consumed={progressData.cards_dict.total_carbs} goal={progressData.cards_dict.carbs_goal} color="#10B981" unit="g" />
+                            <ProgressCard label="Fat" consumed={progressData.cards_dict.total_fats} goal={progressData.cards_dict.fats_goal} color="#EAB308" unit="g" />
+                        </View>
+                    </>
+                ) : (
+                    <View style={styles.centeredMessage}>
+                        <StyledText>No data available for this day.</StyledText>
+                    </View>
+                )}
             </View>
         </ScrollView>
     );
@@ -92,36 +189,50 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     greeting: {
-        marginBottom: 10,
-        textAlign: 'left',
-    },
-    subtitle: {
-        fontSize: 18,
-        marginBottom: 30,
-        textAlign: 'left',
-    },
-    card: {
-        borderRadius: 15,
-        padding: 20,
+        fontSize: 28,
         marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 2,
+        textAlign: 'left',
     },
-    cardTitle: {
-        fontSize: 20,
-        marginBottom: 10,
+    datePickerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 15,
+        marginBottom: 20,
+        paddingHorizontal: 10,
     },
-    cardText: {
+    datePickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 15,
+    },
+    arrowButton: {
+        padding: 10,
+    },
+    dateText: {
+        marginLeft: 10,
         fontSize: 16,
-        marginBottom: 5,
-        lineHeight: 22,
+        fontWeight: '500',
     },
-    placeholder: {
-        textAlign: 'center',
-        marginTop: 30,
-        fontSize: 16,
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        width: '90%',
+        borderRadius: 15,
+        overflow: 'hidden',
+    },
+    cardsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginHorizontal: -8,
+    },
+    centeredMessage: {
+        marginTop: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
     }
 });
