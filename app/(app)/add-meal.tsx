@@ -12,6 +12,8 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 interface IngredientInput {
     id: number;
@@ -83,6 +85,8 @@ export default function AddMealScreen() {
     const { user } = useAuth();
     const params = useLocalSearchParams<{ calculatedMealData?: string }>();
 
+    const insets = useSafeAreaInsets();
+
     const [mealName, setMealName] = useState('');
     const [totalAmount, setTotalAmount] = useState('');
     const [ingredients, setIngredients] = useState<IngredientInput[]>([
@@ -92,12 +96,11 @@ export default function AddMealScreen() {
     const [isCalculating, setIsCalculating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
-
     const [calculatedMeal, setCalculatedMeal] = useState<CalculatedMeal | null>(null);
-
     const [mealDate, setMealDate] = useState(new Date());
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
     const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
+
 
     const resetForm = () => {
         setMealName('');
@@ -185,7 +188,7 @@ export default function AddMealScreen() {
                 total_proteins: calculatedMeal.total_proteins,
                 total_carbs: calculatedMeal.total_carbs,
                 total_fats: calculatedMeal.total_fats,
-                diet_id: user.dietId,
+                diet_id: user?.dietId,
                 list_ingredients: calculatedMeal.ingredients.map(ing => ({
                     name: ing.name,
                     quantity: ing.quantity,
@@ -207,11 +210,16 @@ export default function AddMealScreen() {
         }
     };
 
+
     if (isCalculating) return <CalculatingMacrosView />;
 
     if (calculatedMeal) {
         return (
-            <ScrollView style={{ flex: 1, backgroundColor: colors.appBackground }} contentContainerStyle={styles.container}>
+            <ScrollView
+                style={{ flex: 1, backgroundColor: colors.appBackground }}
+
+                contentContainerStyle={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+            >
                 <StyledText type="title" style={[styles.summaryTitle, { color: colors.text }]}>{calculatedMeal.name}</StyledText>
                 <StyledText style={[styles.summaryAmount, { color: colors.placeholderText }]}>{calculatedMeal.amount}</StyledText>
 
@@ -256,7 +264,10 @@ export default function AddMealScreen() {
 
     return (
         <KeyboardAvoidingWrapper style={{ flex: 1, backgroundColor: colors.appBackground }}>
-            <ScrollView contentContainerStyle={styles.container}>
+            <ScrollView
+
+                contentContainerStyle={[styles.container, { paddingTop: insets.top + 10, paddingBottom: insets.bottom }]}
+            >
                 <StyledTextInput
                     label="Meal Name"
                     placeholder="e.g., Post-Workout Shake"
@@ -274,7 +285,8 @@ export default function AddMealScreen() {
                 />
 
                 {ingredients.map((ingredient, index) => (
-                    <View key={ingredient.id} style={[styles.ingredientContainer, { borderColor: colors.border }]}>
+
+                    <View key={ingredient.id} style={[styles.ingredientContainer, { backgroundColor: colors.card }]}>
                         <View style={styles.ingredientHeader}>
                             <StyledText style={{fontSize: 16, fontWeight: '600', color: colors.text}}>Ingredient {index + 1}</StyledText>
                             {ingredients.length > 1 && (
@@ -382,29 +394,117 @@ const CalculatingMacrosView = () => {
 
 
 const styles = StyleSheet.create({
-    container: { padding: 20 },
-    ingredientContainer: { borderRadius: 15, borderWidth: 1, padding: 15, marginBottom: 20 },
-    ingredientHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    errorText: { textAlign: 'center', marginBottom: 10 },
-    summaryTitle: { textAlign: 'center', fontSize: 24 },
-    summaryAmount: { textAlign: 'center', marginBottom: 20 },
-    summaryCard: { borderRadius: 15, padding: 20, alignItems: 'center' },
-    cardTitle: { fontSize: 18, fontWeight: '600' },
-    totalKcals: { fontSize: 36, fontWeight: 'bold', marginVertical: 10 },
-    macrosContainer: { flexDirection: 'row', justifyContent: 'space-around', width: '100%' },
-    macroDisplay: { flexDirection: 'row', alignItems: 'center' },
-    macroDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-    macroText: { fontSize: 16 },
-    ingredientsTitle: { fontSize: 20, fontWeight: 'bold', marginVertical: 15 },
-    ingredientItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1 },
-    ingredientName: { fontSize: 16 },
-    dateTimePickerContainer: { flexDirection: 'row', borderRadius: 15, overflow: 'hidden', marginTop: 20 },
-    dateTimePickerButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 15 },
-    dateTimePickerText: { fontSize: 16, marginLeft: 10 },
-    separator: { width: 1 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    loaderContainer: { flexDirection: 'row', marginBottom: 40 },
-    fruitLoader: { fontSize: 50, marginHorizontal: 10 },
-    loadingTitle: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-    loadingMessage: { fontSize: 18, textAlign: 'center', height: 50, paddingHorizontal: 10 },
+
+    container: {
+        paddingHorizontal: 20,
+        flexGrow: 1,
+    },
+    ingredientContainer: {
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 20,
+
+    },
+    ingredientHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10
+    },
+    errorText: {
+        textAlign: 'center',
+        marginBottom: 10
+    },
+
+
+    summaryTitle: {
+        textAlign: 'center',
+        fontSize: 26,
+        fontWeight: 'bold',
+        marginTop: 20,
+    },
+    summaryAmount: {
+        textAlign: 'center',
+        marginBottom: 20,
+        fontSize: 16,
+    },
+    summaryCard: {
+        borderRadius: 15,
+        padding: 20,
+        alignItems: 'center'
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: '600'
+    },
+    totalKcals: {
+        fontSize: 36,
+        fontWeight: 'bold',
+        marginVertical: 10
+    },
+    macrosContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%'
+    },
+    macroDisplay: {
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    macroDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginRight: 8
+    },
+    macroText: {
+        fontSize: 16
+    },
+    dateTimePickerContainer: {
+        flexDirection: 'row',
+        borderRadius: 15,
+        overflow: 'hidden',
+        marginTop: 20
+    },
+    dateTimePickerButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 15
+    },
+    dateTimePickerText: {
+        fontSize: 16,
+        marginLeft: 10
+    },
+    separator: {
+        width: 1
+    },
+
+
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    loaderContainer: {
+        flexDirection: 'row',
+        marginBottom: 40
+    },
+    fruitLoader: {
+        fontSize: 50,
+        marginHorizontal: 10
+    },
+    loadingTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20
+    },
+    loadingMessage: {
+        fontSize: 18,
+        textAlign: 'center',
+        height: 50,
+        paddingHorizontal: 10
+    },
 });

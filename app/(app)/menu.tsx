@@ -6,16 +6,24 @@ import { StyledText } from '../../components/StyledText';
 import { StyledButton } from '../../components/StyledButton';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export default function MenuScreen() {
     const { colors, toggleTheme, isDark } = useTheme();
     const { signOut, user } = useAuth();
+
+    const insets = useSafeAreaInsets();
 
     const handleSignOut = async () => {
         await signOut();
     };
 
     return (
-        <ScrollView style={[styles.container, { backgroundColor: colors.appBackground }]}>
+
+        <ScrollView
+            style={[styles.container, { backgroundColor: colors.appBackground }]}
+            contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}
+        >
             <View style={styles.contentContainer}>
                 <StyledText type="title" style={[styles.title, { color: colors.text }]}>
                     Menu
@@ -38,38 +46,37 @@ export default function MenuScreen() {
                         </View>
                     </View>
 
-                    <TouchableOpacity style={[styles.menuItem, { borderTopColor: colors.border }]}>
-                        <Ionicons name="person-outline" size={24} color={colors.text} />
-                        <StyledText style={[styles.menuItemText, { color: colors.text }]}>Account</StyledText>
-                    </TouchableOpacity>
+                    {/* Menu Items */}
+                    <View>
+                        <TouchableOpacity style={[styles.menuItem, { borderTopColor: colors.border }]}>
+                            <Ionicons name="person-outline" size={24} color={colors.text} />
+                            <StyledText style={[styles.menuItemText, { color: colors.text }]}>Account</StyledText>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.menuItem, { borderTopColor: colors.border }]}>
-                        <Ionicons name="notifications-outline" size={24} color={colors.text} />
-                        <StyledText style={[styles.menuItemText, { color: colors.text }]}>Notifications</StyledText>
-                    </TouchableOpacity>
-
-                    <View style={[styles.menuItem, { borderTopColor: colors.border }]}>
-                        <StyledText style={[styles.menuItemText, { marginLeft: 0, color: colors.text }]}>
-                            Theme
-                        </StyledText>
-                        <View style={[styles.themeSelectorContainer, { backgroundColor: colors.inputBackground }]}>
-                            <TouchableOpacity onPress={!isDark ? () => {} : toggleTheme} style={[styles.themeButton, !isDark && { backgroundColor: colors.primary }]}>
-                                <Ionicons name="sunny-outline" size={22} color={!isDark ? 'white' : colors.text} />
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={isDark ? () => {} : toggleTheme} style={[styles.themeButton, isDark && { backgroundColor: colors.primary }]}>
-                                <Ionicons name="moon-outline" size={22} color={isDark ? 'white' : colors.text} />
-                            </TouchableOpacity>
+                        <View style={[styles.menuItem, { borderTopColor: colors.border }]}>
+                            <Ionicons name="color-palette-outline" size={24} color={colors.text} />
+                            <StyledText style={[styles.menuItemText, { color: colors.text }]}>
+                                Theme
+                            </StyledText>
+                            <View style={[styles.themeSelectorContainer, { backgroundColor: colors.inputBackground }]}>
+                                <TouchableOpacity onPress={!isDark ? () => {} : toggleTheme} style={[styles.themeButton, !isDark && { backgroundColor: colors.primary }]}>
+                                    <Ionicons name="sunny-outline" size={22} color={!isDark ? 'white' : colors.text} />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={isDark ? () => {} : toggleTheme} style={[styles.themeButton, isDark && { backgroundColor: colors.primary }]}>
+                                    <Ionicons name="moon-outline" size={22} color={isDark ? 'white' : colors.text} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
                 </View>
 
+                {/* 3. Botão de Sign Out ajustado */}
                 <StyledButton
                     title="Sign Out"
                     onPress={handleSignOut}
                     variant='outlined'
-                    color={colors.error}
-                    style={{marginTop: 30, borderColor: colors.error}}
-                    textStyle={{color: colors.error}}
+                    color={colors.primary}
+                    style={{marginTop: 30}}
                 />
             </View>
         </ScrollView>
@@ -81,12 +88,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     contentContainer: {
-        padding: 20,
-        paddingTop: 60,
+        paddingHorizontal: 20,
     },
     title: {
-        textAlign: 'center',
-        marginBottom: 30,
+        textAlign: 'left',
+        marginBottom: 20,
+        fontSize: 32,
+        fontWeight: 'bold',
     },
     card: {
         borderRadius: 20,

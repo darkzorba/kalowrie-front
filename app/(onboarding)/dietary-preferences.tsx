@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../hooks/useTheme';
 import { StyledTextInput } from '../../components/StyledTextInput';
 import { StyledButton } from '../../components/StyledButton';
@@ -40,6 +42,8 @@ export default function DietaryPreferencesScreen() {
     const router = useRouter();
     const { colors } = useTheme();
 
+    const insets = useSafeAreaInsets();
+
     const handleFinish = async () => {
         setError('');
         if (!activityLevel || !dietType) {
@@ -66,7 +70,6 @@ export default function DietaryPreferencesScreen() {
                 diet_type: dietType,
             };
 
-
             router.push({
                 pathname: '/(onboarding)/generating-diet',
                 params: { dietRequestBody: JSON.stringify(dietRequestBody) },
@@ -79,60 +82,78 @@ export default function DietaryPreferencesScreen() {
     };
 
     return (
-        <KeyboardAvoidingWrapper style={{backgroundColor: colors.appBackground}}>
-            <View style={[GlobalStyles.container, { backgroundColor: colors.appBackground }]}>
-                <StyledText type="title" style={[GlobalStyles.title, styles.title, { color: colors.text }]}>
-                    Your Goals
-                </StyledText>
-                <StyledText type="subtitle" style={[styles.subtitle, { color: colors.text }]}>
-                    Help us tailor your nutrition plan.
-                </StyledText>
+        <KeyboardAvoidingWrapper style={{ backgroundColor: colors.appBackground, flex: 1 }}>
+            <ScrollView
 
-                <StyledPicker
-                    label="What is your main goal?"
-                    items={dietTypes}
-                    selectedValue={dietType}
-                    onValueChange={(value) => setDietType(value as string)}
-                    placeholder="Select your diet type"
-                />
+                contentContainerStyle={[
+                    GlobalStyles.container,
+                    styles.scrollContainer,
+                    { paddingTop: insets.top + 20 }
+                ]}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.headerContainer}>
+                    <StyledText type="title" style={[GlobalStyles.title, { color: colors.text }]}>
+                        Your Goals
+                    </StyledText>
+                    <StyledText type="subtitle" style={[styles.subtitle, { color: colors.text }]}>
+                        Help us tailor your nutrition plan.
+                    </StyledText>
+                </View>
 
-                <StyledTextInput
-                    label="Dietary Restrictions (e.g., allergies, intolerances)"
-                    placeholder="Peanuts, gluten-free, lactose intolerant"
-                    value={dietaryRestrictions}
-                    onChangeText={setDietaryRestrictions}
-                    multiline
-                    numberOfLines={3}
-                    containerStyle={{height: 100}}
-                    style={{height: 80, textAlignVertical: 'top'}}
-                />
-                <StyledTextInput
-                    label="Food Preferences (favorite foods or cuisines)"
-                    placeholder="Italian, Mexican, chicken, broccoli"
-                    value={foodPreferences}
-                    onChangeText={setFoodPreferences}
-                    multiline
-                    numberOfLines={3}
-                    containerStyle={{height: 100}}
-                    style={{height: 80, textAlignVertical: 'top'}}
-                />
-                <StyledTextInput
-                    label="Typical Eating Routine"
-                    placeholder="e.g., Breakfast at 8 AM, Lunch at 1 PM, Dinner at 7 PM"
-                    value={eatingRoutine}
-                    onChangeText={setEatingRoutine}
-                    multiline
-                    numberOfLines={3}
-                    containerStyle={{height: 100}}
-                    style={{height: 80, textAlignVertical: 'top'}}
-                />
-                <StyledPicker
-                    label="Physical Activity Frequency"
-                    items={activityLevels}
-                    selectedValue={activityLevel}
-                    onValueChange={(value) => setActivityLevel(value as string)}
-                    placeholder="Select your activity level"
-                />
+                {/* O restante do seu código permanece idêntico */}
+                <View style={styles.formControlContainer}>
+                    <StyledPicker
+                        label="What is your main goal?"
+                        items={dietTypes}
+                        selectedValue={dietType}
+                        onValueChange={(value) => setDietType(value as string)}
+                        placeholder="Select your diet type"
+                    />
+                </View>
+
+                <View style={styles.formControlContainer}>
+                    <StyledTextInput
+                        label="Dietary Restrictions (e.g., allergies, intolerances)"
+                        placeholder="Peanuts, gluten-free, lactose intolerant"
+                        value={dietaryRestrictions}
+                        onChangeText={setDietaryRestrictions}
+                        multiline
+                        style={styles.multilineInput}
+                    />
+                </View>
+
+                <View style={styles.formControlContainer}>
+                    <StyledTextInput
+                        label="Food Preferences (favorite foods or cuisines)"
+                        placeholder="Italian, Mexican, chicken, broccoli"
+                        value={foodPreferences}
+                        onChangeText={setFoodPreferences}
+                        multiline
+                        style={styles.multilineInput}
+                    />
+                </View>
+
+                <View style={styles.formControlContainer}>
+                    <StyledTextInput
+                        label="Typical Eating Routine"
+                        placeholder="e.g., Breakfast at 8 AM, Lunch at 1 PM, Dinner at 7 PM"
+                        value={eatingRoutine}
+                        onChangeText={setEatingRoutine}
+                        multiline
+                        style={styles.multilineInput}
+                    />
+                </View>
+
+                <View style={styles.formControlContainer}>
+                    <StyledPicker
+                        label="Physical Activity Frequency"
+                        items={activityLevels}
+                        selectedValue={activityLevel}
+                        onValueChange={(value) => setActivityLevel(value as string)}
+                        placeholder="Select your activity level"
+                    />
+                </View>
 
                 {error ? <StyledText type="error" style={GlobalStyles.errorText}>{error}</StyledText> : null}
 
@@ -141,20 +162,33 @@ export default function DietaryPreferencesScreen() {
                     onPress={handleFinish}
                     style={styles.finishButton}
                 />
-            </View>
+            </ScrollView>
         </KeyboardAvoidingWrapper>
     );
 }
 
 const styles = StyleSheet.create({
-    title: {
-        marginBottom: 5,
+    scrollContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        paddingBottom: 40,
+    },
+    headerContainer: {
+        alignItems: 'center',
+        marginBottom: 24,
     },
     subtitle: {
-        marginBottom: 25,
         fontSize: 16,
+        textAlign: 'center',
+    },
+    formControlContainer: {
+        marginBottom: 24,
+    },
+    multilineInput: {
+        minHeight: 80,
+        textAlignVertical: 'top',
     },
     finishButton: {
-        marginTop: 20,
+        marginTop: 16,
     },
 });
