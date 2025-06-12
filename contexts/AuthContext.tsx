@@ -24,6 +24,14 @@ interface DecodedToken {
     iat: number;
 }
 
+interface SignUpData {
+    firstName: string;
+    lastName: string;
+    birthDate: string;
+    email: string;
+    password: string;
+}
+
 interface AuthResponse {
     access: string;
 }
@@ -32,8 +40,8 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    signIn: (username?: string, password?: string) => Promise<void>;
-    signUp: (username?: string, password?: string) => Promise<void>;
+    signIn: (email?: string, password?: string) => Promise<void>;
+    signUp: (data: SignUpData) => Promise<void>;
     signOut: () => Promise<void>;
     isOnboarded: boolean;
     completeOnboarding: () => Promise<void>;
@@ -68,7 +76,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await AsyncStorage.setItem('isOnboarded', JSON.stringify(!decoded.is_first_access));
     };
 
-
     const setDietId = async (dietId: number) => {
         if (user) {
             const updatedUser = { ...user, dietId: dietId };
@@ -100,11 +107,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loadAuthData();
     }, []);
 
-    const signIn = async (username?: string, password?: string) => {
-        if (!username || !password) throw new Error("username and password are required.");
+    const signIn = async (email?: string, password?: string) => {
+        if (!email || !password) throw new Error("Email and password are required.");
         setIsLoading(true);
         try {
-            const response = await apiService<AuthResponse>('/login', 'POST', { username, password }, false);
+
+            const response = await apiService<AuthResponse>('/login', 'POST', { username: email, password }, false);
             await processToken(response.access);
         } catch (error: any) {
             const displayMessage = error.data?.message || error.message || "Login failed.";
@@ -114,15 +122,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const signUp = async (username?: string, password?: string) => {
-        if (!username || !password) throw new Error("username and password are required.");
+    const signUp = async (data: SignUpData) => {
         setIsLoading(true);
         try {
-            const response = await apiService<AuthResponse>('/user/create', 'POST', { username, password }, false);
-            if (response.access) {
-                await processToken(response.access);
-            }
-        } catch (error: any) {
+
+            await apiService('/user/create', 'POST', {
+                first_name: data.firstName,
+                last_name: data.lastName,
+                birth_date: data.birthDate,
+                email: data.email,
+                password: data.password,
+            }, false);
+
+
+            await signIn(data.email, data.password);
+        } catch (error: any)
+        {
             const displayMessage = error.data?.message || error.message || "Registration failed.";
             throw new Error(displayMessage);
         } finally {
