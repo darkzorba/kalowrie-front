@@ -70,7 +70,6 @@ export default function MenuScreen() {
                     </View>
                 </View>
 
-                {/* 3. Botão de Sign Out ajustado */}
                 <StyledButton
                     title="Sign Out"
                     onPress={handleSignOut}

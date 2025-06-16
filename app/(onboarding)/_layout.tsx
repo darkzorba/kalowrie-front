@@ -1,14 +1,16 @@
 import React from 'react';
 import { Stack, useRouter } from 'expo-router';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 
 export default function OnboardingLayout() {
     const { colors, toggleTheme, isDark } = useTheme();
     const { signOut } = useAuth();
     const router = useRouter();
+    const { t } = useLocalization();
 
     const handleSignOut = async () => {
         await signOut();
@@ -37,10 +39,10 @@ export default function OnboardingLayout() {
                 ),
             }}
         >
-            <Stack.Screen name="user-details" options={{ title: 'Your Details' }} />
-            <Stack.Screen name="dietary-preferences" options={{ title: 'Your Goals' }} />
+            <Stack.Screen name="user-details" options={{ title: t('tellUsAboutYourself') }} />
+            <Stack.Screen name="dietary-preferences" options={{ title: t('yourGoals') }} />
             <Stack.Screen name="generating-diet" options={{ headerShown: false }} />
-            <Stack.Screen name="view-diet" options={{ title: 'Your Diet Plan' }} />
+            <Stack.Screen name="view-diet" options={{ title: t('yourPersonalizedDiet') }} />
         </Stack>
     );
 }

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 import apiService, { storeToken, getToken, removeToken } from '../services/apiService';
 
+
 interface User {
     id: string;
     username?: string;
@@ -24,7 +25,11 @@ interface DecodedToken {
     iat: number;
 }
 
-interface SignUpData {
+interface AuthResponse {
+    access: string;
+}
+
+interface RegisterFormData {
     firstName: string;
     lastName: string;
     birthDate: string;
@@ -32,16 +37,12 @@ interface SignUpData {
     password: string;
 }
 
-interface AuthResponse {
-    access: string;
-}
-
 interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    signIn: (email?: string, password?: string) => Promise<void>;
-    signUp: (data: SignUpData) => Promise<void>;
+    signIn: (username?: string, password?: string) => Promise<void>;
+    signUp: (formData: RegisterFormData) => Promise<void>;
     signOut: () => Promise<void>;
     isOnboarded: boolean;
     completeOnboarding: () => Promise<void>;
@@ -49,7 +50,9 @@ interface AuthContextType {
     initialLoading: boolean;
 }
 
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -107,12 +110,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loadAuthData();
     }, []);
 
-    const signIn = async (email?: string, password?: string) => {
-        if (!email || !password) throw new Error("Email and password are required.");
+    const signIn = async (username?: string, password?: string) => {
+        if (!username || !password) throw new Error("username and password are required.");
         setIsLoading(true);
         try {
-
-            const response = await apiService<AuthResponse>('/login', 'POST', { username: email, password }, false);
+            const response = await apiService<AuthResponse>('/login', 'POST', { username, password }, false);
             await processToken(response.access);
         } catch (error: any) {
             const displayMessage = error.data?.message || error.message || "Login failed.";
@@ -122,22 +124,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const signUp = async (data: SignUpData) => {
+    const signUp = async (formData: RegisterFormData) => {
         setIsLoading(true);
         try {
+            const requestBody = {
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                birth_date: formData.birthDate,
+                email: formData.email,
+                password: formData.password,
+                username: formData.email,
+            };
 
-            await apiService('/user/create', 'POST', {
-                first_name: data.firstName,
-                last_name: data.lastName,
-                birth_date: data.birthDate,
-                email: data.email,
-                password: data.password,
-            }, false);
 
 
-            await signIn(data.email, data.password);
-        } catch (error: any)
-        {
+            await apiService('/user/create', 'POST', requestBody, false);
+
+
+
+            await signIn(formData.email, formData.password);
+
+        } catch (error: any) {
             const displayMessage = error.data?.message || error.message || "Registration failed.";
             throw new Error(displayMessage);
         } finally {

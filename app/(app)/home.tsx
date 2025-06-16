@@ -11,6 +11,7 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { Calendar, DateData } from 'react-native-calendars';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { StyledText } from '../../components/StyledText';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
@@ -31,34 +32,35 @@ interface ProgressData {
     }
 }
 
-const formatDate = (date: Date) => {
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    });
-};
-
-const formatDateForAPI = (date: Date) => {
-    return date.toISOString().split('T')[0];
-};
-
 export default function HomeScreen() {
     const { colors } = useTheme();
     const { user } = useAuth();
+    const { t, language } = useLocalization();
 
     const [progressData, setProgressData] = useState<ProgressData | null>(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isCalendarVisible, setCalendarVisible] = useState(false);
+
+    const formatDate = (date: Date) => {
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) return t('today');
+        if (date.toDateString() === yesterday.toDateString()) return t('yesterday');
+
+        return date.toLocaleDateString(language === 'pt-BR' ? 'pt-BR' : 'en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+    };
+
+    const formatDateForAPI = (date: Date) => {
+        return date.toISOString().split('T')[0];
+    };
 
     const selectedDateString = useMemo(() => formatDateForAPI(selectedDate), [selectedDate]);
 
@@ -83,7 +85,6 @@ export default function HomeScreen() {
     );
 
     const onDayPress = (day: DateData) => {
-
         const timezoneOffset = new Date().getTimezoneOffset() * 60000;
         setSelectedDate(new Date(day.timestamp + timezoneOffset));
         setCalendarVisible(false);
@@ -98,8 +99,8 @@ export default function HomeScreen() {
     };
 
     const getGreeting = () => {
-        if (user?.firstName) return `Welcome, ${user.firstName}!`;
-        return `Welcome, ${user?.email || 'User'}!`;
+        const name = user?.firstName || user?.email || 'User';
+        return t('welcome').replace('{name}', name);
     };
 
     const markedDates = {
@@ -129,7 +130,6 @@ export default function HomeScreen() {
     };
 
     return (
-
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]}>
             <ScrollView contentContainerStyle={styles.contentContainer}>
                 <StyledText type="title" style={[styles.greeting, { color: colors.text }]}>
@@ -163,6 +163,7 @@ export default function HomeScreen() {
                                 markedDates={markedDates}
                                 maxDate={formatDateForAPI(new Date())}
                                 theme={calendarTheme}
+                                key={language} // Force re-render on language change
                             />
                         </View>
                     </TouchableOpacity>
@@ -176,24 +177,22 @@ export default function HomeScreen() {
                     </View>
                 ) : progressData ? (
                     <>
-                        <MainProgressCard label="Calories" consumed={progressData.cards_dict.total_kcals} goal={progressData.cards_dict.kcals_goal} color="#F97316" unit="kcal" />
-
-                        {/* 4. Ajuste na estrutura dos cards para um grid correto */}
+                        <MainProgressCard label={t('calories')} consumed={progressData.cards_dict.total_kcals} goal={progressData.cards_dict.kcals_goal} color="#F97316" unit="kcal" />
                         <View style={styles.cardsContainer}>
                             <View style={styles.cardItem}>
-                                <ProgressCard label="Protein" consumed={progressData.cards_dict.total_proteins} goal={progressData.cards_dict.proteins_goal} color="#3B82F6" unit="g" />
+                                <ProgressCard label={t('protein')} consumed={progressData.cards_dict.total_proteins} goal={progressData.cards_dict.proteins_goal} color="#3B82F6" unit="g" />
                             </View>
                             <View style={styles.cardItem}>
-                                <ProgressCard label="Carbs" consumed={progressData.cards_dict.total_carbs} goal={progressData.cards_dict.carbs_goal} color="#10B981" unit="g" />
+                                <ProgressCard label={t('carbs')} consumed={progressData.cards_dict.total_carbs} goal={progressData.cards_dict.carbs_goal} color="#10B981" unit="g" />
                             </View>
                             <View style={styles.cardItem}>
-                                <ProgressCard label="Fat" consumed={progressData.cards_dict.total_fats} goal={progressData.cards_dict.fats_goal} color="#EAB308" unit="g" />
+                                <ProgressCard label={t('fat')} consumed={progressData.cards_dict.total_fats} goal={progressData.cards_dict.fats_goal} color="#EAB308" unit="g" />
                             </View>
                         </View>
                     </>
                 ) : (
                     <View style={styles.centeredMessage}>
-                        <StyledText>No data available for this day.</StyledText>
+                        <StyledText>{t('noDataForDay')}</StyledText>
                     </View>
                 )}
             </ScrollView>
@@ -202,66 +201,16 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-
-    safeArea: {
-        flex: 1,
-    },
-    contentContainer: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    },
-    greeting: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginTop: 16,
-        marginBottom: 20,
-    },
-    datePickerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderRadius: 15,
-        marginBottom: 24,
-        paddingHorizontal: 10,
-    },
-    datePickerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 15,
-    },
-    arrowButton: {
-        padding: 10,
-    },
-    dateText: {
-        marginLeft: 10,
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.6)',
-    },
-    modalContent: {
-        width: '90%',
-        borderRadius: 15,
-    },
-
-    cardsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginHorizontal: -6,
-        marginTop: 12,
-    },
-    cardItem: {
-        width: '50%',
-        paddingHorizontal: 6,
-        marginBottom: 12,
-    },
-    centeredMessage: {
-        marginTop: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-    }
+    safeArea: { flex: 1 },
+    contentContainer: { paddingHorizontal: 20, paddingBottom: 20 },
+    greeting: { fontSize: 28, fontWeight: 'bold', marginTop: 16, marginBottom: 20 },
+    datePickerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 15, marginBottom: 24, paddingHorizontal: 10 },
+    datePickerButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
+    arrowButton: { padding: 10 },
+    dateText: { marginLeft: 10, fontSize: 16, fontWeight: '500' },
+    modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
+    modalContent: { width: '90%', borderRadius: 15 },
+    cardsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6, marginTop: 12 },
+    cardItem: { width: '50%', paddingHorizontal: 6, marginBottom: 12 },
+    centeredMessage: { marginTop: 50, alignItems: 'center', justifyContent: 'center' }
 });

@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { StyledTextInput } from '../../components/StyledTextInput';
 import { StyledButton } from '../../components/StyledButton';
 import { StyledText } from '../../components/StyledText';
@@ -11,25 +10,6 @@ import { StyledPicker } from '../../components/StyledPicker';
 import { GlobalStyles } from '../../constants/GlobalStyles';
 import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const activityLevels = [
-    { label: 'Light (little to no exercise)', value: 'light' },
-    { label: 'Moderate (exercise 3-5 days/week)', value: 'moderate' },
-    { label: 'High (intense exercise 6-7 days/week)', value: 'high' },
-];
-
-const dietTypes = [
-    { label: 'Gain Muscle', value: 'mass_gain' },
-    { label: 'Fat Loss', value: 'fat_loss' },
-    { label: 'Maintenance', value: 'maintenance' },
-];
-
-interface UserDetails {
-    weight: string;
-    height: string;
-    age: string;
-    gender: string;
-}
 
 export default function DietaryPreferencesScreen() {
     const [dietaryRestrictions, setDietaryRestrictions] = useState('');
@@ -41,13 +21,24 @@ export default function DietaryPreferencesScreen() {
 
     const router = useRouter();
     const { colors } = useTheme();
+    const { t } = useLocalization();
 
-    const insets = useSafeAreaInsets();
+    const activityLevels = useMemo(() => [
+        { label: t('light'), value: 'light' },
+        { label: t('moderate'), value: 'moderate' },
+        { label: t('high'), value: 'high' },
+    ], [t]);
+
+    const dietTypes = useMemo(() => [
+        { label: t('gainMuscle'), value: 'mass_gain' },
+        { label: t('fatLoss'), value: 'fat_loss' },
+        { label: t('maintenance'), value: 'maintenance' },
+    ], [t]);
 
     const handleFinish = async () => {
         setError('');
         if (!activityLevel || !dietType) {
-            setError('Please fill in all fields.');
+            setError(t('fillAllFields'));
             return;
         }
 
@@ -56,7 +47,7 @@ export default function DietaryPreferencesScreen() {
             if (!userDetailsString) {
                 throw new Error('User details not found. Please go back.');
             }
-            const userDetails: UserDetails = JSON.parse(userDetailsString);
+            const userDetails = JSON.parse(userDetailsString);
 
             const dietRequestBody = {
                 height: userDetails.height,
@@ -77,118 +68,67 @@ export default function DietaryPreferencesScreen() {
 
         } catch(e: any) {
             setError(e.message || 'An error occurred preparing your data.');
-            console.error("Failed to prepare data for diet generation:", e);
         }
     };
 
     return (
-        <KeyboardAvoidingWrapper style={{ backgroundColor: colors.appBackground, flex: 1 }}>
-            <ScrollView
+        <KeyboardAvoidingWrapper style={{backgroundColor: colors.appBackground}}>
+            <View style={[GlobalStyles.container, { backgroundColor: colors.appBackground }]}>
+                <StyledText type="title" style={[GlobalStyles.title, styles.title, { color: colors.text }]}>
+                    {t('yourGoals')}
+                </StyledText>
+                <StyledText type="subtitle" style={[styles.subtitle, { color: colors.text }]}>
+                    {t('helpUsTailor')}
+                </StyledText>
 
-                contentContainerStyle={[
-                    GlobalStyles.container,
-                    styles.scrollContainer,
-                    { paddingTop: insets.top + 20 }
-                ]}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.headerContainer}>
-                    <StyledText type="title" style={[GlobalStyles.title, { color: colors.text }]}>
-                        Your Goals
-                    </StyledText>
-                    <StyledText type="subtitle" style={[styles.subtitle, { color: colors.text }]}>
-                        Help us tailor your nutrition plan.
-                    </StyledText>
-                </View>
+                <StyledPicker
+                    label={t('mainGoal')}
+                    items={dietTypes}
+                    selectedValue={dietType}
+                    onValueChange={(value) => setDietType(value as string)}
+                    placeholder={t('selectDietType')}
+                />
 
-                {/* O restante do seu código permanece idêntico */}
-                <View style={styles.formControlContainer}>
-                    <StyledPicker
-                        label="What is your main goal?"
-                        items={dietTypes}
-                        selectedValue={dietType}
-                        onValueChange={(value) => setDietType(value as string)}
-                        placeholder="Select your diet type"
-                    />
-                </View>
-
-                <View style={styles.formControlContainer}>
-                    <StyledTextInput
-                        label="Dietary Restrictions (e.g., allergies, intolerances)"
-                        placeholder="Peanuts, gluten-free, lactose intolerant"
-                        value={dietaryRestrictions}
-                        onChangeText={setDietaryRestrictions}
-                        multiline
-                        style={styles.multilineInput}
-                    />
-                </View>
-
-                <View style={styles.formControlContainer}>
-                    <StyledTextInput
-                        label="Food Preferences (favorite foods or cuisines)"
-                        placeholder="Italian, Mexican, chicken, broccoli"
-                        value={foodPreferences}
-                        onChangeText={setFoodPreferences}
-                        multiline
-                        style={styles.multilineInput}
-                    />
-                </View>
-
-                <View style={styles.formControlContainer}>
-                    <StyledTextInput
-                        label="Typical Eating Routine"
-                        placeholder="e.g., Breakfast at 8 AM, Lunch at 1 PM, Dinner at 7 PM"
-                        value={eatingRoutine}
-                        onChangeText={setEatingRoutine}
-                        multiline
-                        style={styles.multilineInput}
-                    />
-                </View>
-
-                <View style={styles.formControlContainer}>
-                    <StyledPicker
-                        label="Physical Activity Frequency"
-                        items={activityLevels}
-                        selectedValue={activityLevel}
-                        onValueChange={(value) => setActivityLevel(value as string)}
-                        placeholder="Select your activity level"
-                    />
-                </View>
+                <StyledTextInput
+                    label={t('dietaryRestrictions')}
+                    placeholder={t('dietaryRestrictionsPlaceholder')}
+                    value={dietaryRestrictions}
+                    onChangeText={setDietaryRestrictions}
+                />
+                <StyledTextInput
+                    label={t('foodPreferences')}
+                    placeholder={t('foodPreferencesPlaceholder')}
+                    value={foodPreferences}
+                    onChangeText={setFoodPreferences}
+                />
+                <StyledTextInput
+                    label={t('eatingRoutine')}
+                    placeholder={t('eatingRoutinePlaceholder')}
+                    value={eatingRoutine}
+                    onChangeText={setEatingRoutine}
+                />
+                <StyledPicker
+                    label={t('activityFrequency')}
+                    items={activityLevels}
+                    selectedValue={activityLevel}
+                    onValueChange={(value) => setActivityLevel(value as string)}
+                    placeholder={t('selectActivityLevel')}
+                />
 
                 {error ? <StyledText type="error" style={GlobalStyles.errorText}>{error}</StyledText> : null}
 
                 <StyledButton
-                    title="Generate My Diet"
+                    title={t('generateMyDiet')}
                     onPress={handleFinish}
                     style={styles.finishButton}
                 />
-            </ScrollView>
+            </View>
         </KeyboardAvoidingWrapper>
     );
 }
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        flexGrow: 1,
-        justifyContent: 'center',
-        paddingBottom: 40,
-    },
-    headerContainer: {
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    subtitle: {
-        fontSize: 16,
-        textAlign: 'center',
-    },
-    formControlContainer: {
-        marginBottom: 24,
-    },
-    multilineInput: {
-        minHeight: 80,
-        textAlignVertical: 'top',
-    },
-    finishButton: {
-        marginTop: 16,
-    },
+    title: { marginBottom: 5 },
+    subtitle: { marginBottom: 25, fontSize: 16 },
+    finishButton: { marginTop: 20 },
 });

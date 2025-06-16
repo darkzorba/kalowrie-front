@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { SplashScreen, Stack, useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { LocalizationProvider } from '../contexts/LocalizationContext';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
@@ -13,19 +14,12 @@ const InitialLayout = () => {
     const router = useRouter();
 
     useEffect(() => {
-        if (initialLoading) {
-            return;
-        }
-
+        if (initialLoading) return;
         if (!user) {
-
             router.replace('/(auth)/login');
-        } else if (user && !isOnboarded) {
-
-
+        } else if (!isOnboarded) {
             router.replace('/(onboarding)/user-details');
-        } else if (user && isOnboarded) {
-
+        } else {
             router.replace('/(app)/home');
         }
     }, [user, isOnboarded, initialLoading]);
@@ -35,8 +29,6 @@ const InitialLayout = () => {
             SplashScreen.hideAsync();
         }
     }, [initialLoading]);
-
-
 
     if (initialLoading) {
         return (
@@ -49,25 +41,26 @@ const InitialLayout = () => {
     return (
         <>
             <StatusBar style={isDark ? 'light' : 'dark'} />
-            <Stack screenOptions={{ headerShown: false }}>
-                {/* The screens are defined here, but the useEffect will navigate to the correct one. */}
+            <Stack>
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(onboarding)" />
-                <Stack.Screen name="(app)" />
+                <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+                <Stack.Screen name="(app)" options={{ headerShown: false }} />
             </Stack>
         </>
     );
 };
 
-const RootLayoutNav = () => {
+export default function RootLayoutNav() {
     return (
-        <ThemeProvider>
-            <AuthProvider>
-                <InitialLayout />
-            </AuthProvider>
-        </ThemeProvider>
+        <LocalizationProvider>
+            <ThemeProvider>
+                <AuthProvider>
+                    <InitialLayout />
+                </AuthProvider>
+            </ThemeProvider>
+        </LocalizationProvider>
     );
-};
+}
 
 const styles = StyleSheet.create({
     loaderContainer: {
@@ -76,5 +69,3 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 });
-
-export default RootLayoutNav;

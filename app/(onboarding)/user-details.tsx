@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { StyledTextInput } from '../../components/StyledTextInput';
 import { StyledButton } from '../../components/StyledButton';
 import { StyledText } from '../../components/StyledText';
@@ -9,13 +10,6 @@ import { StyledPicker } from '../../components/StyledPicker';
 import { GlobalStyles } from '../../constants/GlobalStyles';
 import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const genderOptions = [
-    { label: 'Male', value: 'male' },
-    { label: 'Female', value: 'female' },
-    { label: 'Other', value: 'other' },
-    { label: 'Prefer not to say', value: 'prefer_not_to_say' },
-];
 
 export default function UserDetailsScreen() {
     const [weight, setWeight] = useState('');
@@ -26,23 +20,20 @@ export default function UserDetailsScreen() {
 
     const router = useRouter();
     const { colors } = useTheme();
+    const { t } = useLocalization();
+
+
+    const genderOptions = useMemo(() => [
+        { label: t('male'), value: 'male' },
+        { label: t('female'), value: 'female' },
+        { label: t('other'), value: 'other' },
+        { label: t('preferNotToSay'), value: 'prefer_not_to_say' },
+    ], [t]);
 
     const handleNext = async () => {
         setError('');
         if (!weight || !height || !age || !gender) {
-            setError('Please fill in all fields.');
-            return;
-        }
-        if (isNaN(parseFloat(weight)) || parseFloat(weight) <=0){
-            setError('Please enter a valid weight.');
-            return;
-        }
-        if (isNaN(parseFloat(height)) || parseFloat(height) <=0){
-            setError('Please enter a valid height.');
-            return;
-        }
-        if (isNaN(parseInt(age)) || parseInt(age) <=0 || parseInt(age) > 120){
-            setError('Please enter a valid age.');
+            setError(t('fillAllFields'));
             return;
         }
 
@@ -52,7 +43,6 @@ export default function UserDetailsScreen() {
             router.push('/(onboarding)/dietary-preferences');
         } catch(e) {
             setError('Failed to save details. Please try again.');
-            console.error("Failed to save user details", e);
         }
     };
 
@@ -60,45 +50,45 @@ export default function UserDetailsScreen() {
         <KeyboardAvoidingWrapper style={{backgroundColor: colors.appBackground}}>
             <View style={[GlobalStyles.container, { backgroundColor: colors.appBackground }]}>
                 <StyledText type="title" style={[GlobalStyles.title, styles.title, { color: colors.text }]}>
-                    Tell Us About Yourself
+                    {t('tellUsAboutYourself')}
                 </StyledText>
                 <StyledText type="subtitle" style={[styles.subtitle,{ color: colors.text }]}>
-                    This helps us personalize your experience.
+                    {t('helpsUsPersonalize')}
                 </StyledText>
 
                 <StyledTextInput
-                    label="Weight (kg)"
+                    label={t('weight')}
                     placeholder="e.g., 70"
                     value={weight}
                     onChangeText={setWeight}
                     keyboardType="numeric"
                 />
                 <StyledTextInput
-                    label="Height (cm)"
+                    label={t('height')}
                     placeholder="e.g., 175"
                     value={height}
                     onChangeText={setHeight}
                     keyboardType="numeric"
                 />
                 <StyledTextInput
-                    label="Age (years)"
+                    label={t('age')}
                     placeholder="e.g., 30"
                     value={age}
                     onChangeText={setAge}
                     keyboardType="numeric"
                 />
                 <StyledPicker
-                    label="Gender"
+                    label={t('gender')}
                     items={genderOptions}
                     selectedValue={gender}
                     onValueChange={(value) => setGender(value as string)}
-                    placeholder="Select your gender"
+                    placeholder={t('selectGender')}
                 />
 
                 {error ? <StyledText type="error" style={GlobalStyles.errorText}>{error}</StyledText> : null}
 
                 <StyledButton
-                    title="Next"
+                    title={t('next')}
                     onPress={handleNext}
                     style={styles.nextButton}
                 />
@@ -108,14 +98,7 @@ export default function UserDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-    title: {
-        marginBottom: 5,
-    },
-    subtitle: {
-        marginBottom: 25,
-        fontSize: 16,
-    },
-    nextButton: {
-        marginTop: 20,
-    }
+    title: { marginBottom: 5 },
+    subtitle: { marginBottom: 25, fontSize: 16 },
+    nextButton: { marginTop: 20 },
 });

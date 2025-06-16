@@ -12,13 +12,18 @@ export default function AppTabLayout() {
     const actionOptions = [
         {
             label: 'Add Meal',
-            icon: 'restaurant-outline' as const,
-            onPress: () => router.push('/(app)/add-meal')
+            icon: 'add-circle-outline' as const,
+            onPress: () => router.push('/add-meal-simple')
+        },
+        {
+            label: 'Track by Description',
+            icon: 'document-text-outline' as const,
+            onPress: () => router.push('/track-by-description')
         },
         {
             label: 'Track By Photo',
             icon: 'camera-outline' as const,
-            onPress: () => router.push('/(app)/track-by-photo')
+            onPress: () => router.push('/track-by-photo')
         }
     ];
 
@@ -46,7 +51,6 @@ export default function AppTabLayout() {
                     name="home"
                     options={{
                         title: 'Dashboard',
-                        href: '/(app)/home',
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="stats-chart" size={size} color={color} />
                         ),
@@ -56,7 +60,6 @@ export default function AppTabLayout() {
                     name="diet"
                     options={{
                         title: 'My Diet',
-                        href: '/(app)/diet',
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="restaurant" size={size} color={color} />
                         ),
@@ -81,14 +84,27 @@ export default function AppTabLayout() {
                     name="menu"
                     options={{
                         title: 'Menu',
-                        href: '/(app)/menu',
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="menu" size={size} color={color} />
                         ),
                     }}
                 />
-                <Tabs.Screen name="add-meal" options={{ href: null }} />
-                <Tabs.Screen name="track-by-photo" options={{ href: null }} />
+                <Tabs.Screen
+                    name="add-meal-simple"
+                    options={{
+                        href: null
+                    }}/>
+                <Tabs.Screen
+                    name="track-by-description"
+                    options={{
+                        href: null
+                    }}/>
+                <Tabs.Screen
+                    name="track-by-photo"
+                    options={{
+                        href: null
+                    }}
+                />
             </Tabs>
 
             <Modal

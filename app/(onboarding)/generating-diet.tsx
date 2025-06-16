@@ -2,34 +2,33 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
-import { useAuth} from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { StyledText } from '../../components/StyledText';
 import { StyledButton } from '../../components/StyledButton';
 import apiService from '../../services/apiService';
 
-
-const MESSAGES = [
-    'Gathering fresh ingredients...',
-    'Consulting with our AI nutritionists...',
-    'Crafting the perfect meal plan...',
-    'Balancing macronutrients...',
-    'Adding a dash of flavor...',
-    'Finalizing your personalized diet...'
-];
-
-const BouncingFruit = ({ yAnim, emoji }: { yAnim: Animated.Value, emoji: string }) => {
-    return (
-        <Animated.Text style={[styles.fruitLoader, { transform: [{ translateY: yAnim }] }]}>
-            {emoji}
-        </Animated.Text>
-    );
-};
+const BouncingFruit = ({ yAnim, emoji }: { yAnim: Animated.Value, emoji: string }) => (
+    <Animated.Text style={[styles.fruitLoader, { transform: [{ translateY: yAnim }] }]}>
+        {emoji}
+    </Animated.Text>
+);
 
 export default function GeneratingDietScreen() {
     const params = useLocalSearchParams();
     const router = useRouter();
     const { colors } = useTheme();
     const { completeOnboarding } = useAuth();
+    const { t } = useLocalization();
+
+    const MESSAGES = [
+        t('gatheringIngredients'),
+        t('consultingNutritionists'),
+        t('craftingMealPlan'),
+        t('balancingMacros'),
+        t('addingFlavor'),
+        t('finalizingDiet'),
+    ];
 
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -115,7 +114,6 @@ export default function GeneratingDietScreen() {
 
         generateDiet();
     }, [params]);
-
     return (
         <View style={[styles.container, { backgroundColor: colors.appBackground }]}>
             <View style={styles.content}>
@@ -129,14 +127,13 @@ export default function GeneratingDietScreen() {
                             <BouncingFruit yAnim={yAnim5} emoji="🍇" />
                         </View>
                         <StyledText type="title" style={[styles.title, { color: colors.text }]}>
-                            Generating Your Diet
+                            {t('generatingYourDiet')}
                         </StyledText>
                         <StyledText style={[styles.message, { color: colors.text }]}>
                             {MESSAGES[currentMessageIndex]}
                         </StyledText>
                     </>
-                )}
-                {error && (
+                )} { error && (
                     <>
                         <StyledText style={styles.fruitLoader}>😕</StyledText>
                         <StyledText type="title" style={[styles.title, { color: colors.text, marginBottom: 10 }]}>

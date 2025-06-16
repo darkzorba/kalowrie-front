@@ -2,17 +2,18 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Image, Platform, Animated } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { StyledText } from '../../components/StyledText';
 import { StyledButton } from '../../components/StyledButton';
 import { Ionicons } from '@expo/vector-icons';
 import apiService from '../../services/apiService';
 import { useRouter, useFocusEffect } from 'expo-router';
 
-const TRACKING_MESSAGES = [
-    'Analyzing your photo...',
-    'Identifying ingredients...',
-    'Calculating nutritional values...',
-    'Almost there...'
+const TRACKING_MESSAGES_KEYS = [
+    'analyzingPhoto',
+    'identifyingIngredients',
+    'calculatingValues',
+    'almostThere',
 ];
 
 interface CalculatedMeal {
@@ -30,13 +31,12 @@ interface MacrosApiResponse {
 }
 
 const BouncingFruit = ({ yAnim, emoji }: { yAnim: Animated.Value, emoji: string }) => (
-    <Animated.Text style={[styles.fruitLoader, { transform: [{ translateY: yAnim }] }]}>
-        {emoji}
-    </Animated.Text>
+    <Animated.Text style={[styles.fruitLoader, { transform: [{ translateY: yAnim }] }]}> {emoji} </Animated.Text>
 );
 
 export default function TrackByPhotoScreen() {
     const { colors } = useTheme();
+    const { t } = useLocalization();
     const router = useRouter();
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +52,6 @@ export default function TrackByPhotoScreen() {
         setIsLoading(false);
     };
 
-
     useFocusEffect(
         useCallback(() => {
             resetScreen();
@@ -66,7 +65,7 @@ export default function TrackByPhotoScreen() {
             : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (permission.status !== 'granted') {
-            alert('Permission to access photos is required!');
+            alert(t('photoPermissionRequired'));
             return;
         }
 
@@ -89,7 +88,6 @@ export default function TrackByPhotoScreen() {
             if (Platform.OS === 'web') {
                 const response = await fetch(imageUri);
                 const blob = await response.blob();
-
                 formData.append('food_img', new File([blob], 'meal.jpg', { type: 'image/jpeg' }));
             } else {
                 formData.append('food_img', {
@@ -100,18 +98,9 @@ export default function TrackByPhotoScreen() {
             }
 
             const response = await apiService<MacrosApiResponse>('/ai/track/macros', 'POST', formData, true);
-
-
-            router.replace({
-                pathname: '/(app)/add-meal',
-                params: { calculatedMealData: JSON.stringify(response.macros_dict) }
-            });
-
+            router.replace({ pathname: '/(app)/track-by-description', params: { calculatedMealData: JSON.stringify(response.macros_dict) } });
         } catch (e: any) {
-            setError(e.message || 'Failed to analyze photo.');
-        } finally {
-
-
+            setError(e.message || t('failedToCalculate'));
         }
     };
 
@@ -135,7 +124,7 @@ export default function TrackByPhotoScreen() {
         ];
 
         const interval = setInterval(() => {
-            setCurrentMessageIndex(prev => (prev + 1) % TRACKING_MESSAGES.length);
+            setCurrentMessageIndex(prev => (prev + 1) % TRACKING_MESSAGES_KEYS.length);
         }, 3000);
 
         return () => {
@@ -154,10 +143,10 @@ export default function TrackByPhotoScreen() {
                     <BouncingFruit yAnim={yAnim3} emoji="✨" />
                 </View>
                 <StyledText type="title" style={[styles.loadingTitle, { color: colors.text }]}>
-                    Analyzing...
+                    {t('analyzing')}
                 </StyledText>
                 <StyledText style={[styles.loadingMessage, { color: colors.text }]}>
-                    {TRACKING_MESSAGES[currentMessageIndex]}
+                    {t(TRACKING_MESSAGES_KEYS[currentMessageIndex])}
                 </StyledText>
             </View>
         );
@@ -168,19 +157,19 @@ export default function TrackByPhotoScreen() {
             {!imageUri ? (
                 <>
                     <Ionicons name="camera-outline" size={80} color={colors.placeholderText} />
-                    <StyledText type="title" style={[styles.title, { color: colors.text }]}>Track Your Meal</StyledText>
-                    <StyledText style={[styles.subtitle, { color: colors.placeholderText }]}>Choose an option to get started.</StyledText>
-                    <StyledButton title="Take Photo" onPress={() => pickImage(true)} style={styles.button} />
-                    <StyledButton title="Choose from Library" onPress={() => pickImage(false)} variant="outlined" style={styles.button} />
+                    <StyledText type="title" style={[styles.title, { color: colors.text }]}>{t('trackYourMeal')}</StyledText>
+                    <StyledText style={[styles.subtitle, { color: colors.placeholderText }]}>{t('chooseOptionToStart')}</StyledText>
+                    <StyledButton title={t('takePhoto')} onPress={() => pickImage(true)} style={styles.button} />
+                    <StyledButton title={t('chooseFromLibrary')} onPress={() => pickImage(false)} variant="outlined" style={styles.button} />
                 </>
             ) : (
                 <>
                     <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                    <StyledText type="title" style={[styles.title, { color: colors.text }]}>Confirm Your Photo</StyledText>
-                    <StyledText style={[styles.subtitle, { color: colors.placeholderText }]}>Ready to analyze this meal?</StyledText>
-                    {error ? <StyledText type="error" style={{marginBottom: 10}}>{error}</StyledText> : null}
-                    <StyledButton title="Confirm & Analyze" onPress={handleSendPhoto} style={styles.button} />
-                    <StyledButton title="Choose a Different Photo" onPress={() => setImageUri(null)} variant="text" style={styles.button} />
+                    <StyledText type="title" style={[styles.title, { color: colors.text }]}>{t('confirmYourPhoto')}</StyledText>
+                    <StyledText style={[styles.subtitle, { color: colors.placeholderText }]}>{t('readyToAnalyze')}</StyledText>
+                    {error ? <StyledText type="error" style={{ marginBottom: 10 }}>{error}</StyledText> : null}
+                    <StyledButton title={t('confirmAndAnalyze')} onPress={handleSendPhoto} style={styles.button} />
+                    <StyledButton title={t('chooseDifferentPhoto')} onPress={() => setImageUri(null)} variant="text" style={styles.button} />
                 </>
             )}
         </View>

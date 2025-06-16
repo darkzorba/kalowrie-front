@@ -47,7 +47,10 @@ export const StyledPicker: React.FC<StyledPickerProps> = ({
                 ]}
                 onPress={() => setModalVisible(true)}
             >
-                <StyledText style={{ color: selectedItem ? colors.text : colors.placeholderText }}>
+                <StyledText style={{ color: selectedItem ? colors.text : colors.placeholderText, flexShrink:1}}
+                ellipsizeMode="tail"
+                numberOfLines={2}
+                >
                     {selectedItem ? selectedItem.label : placeholder}
                 </StyledText>
                 <Ionicons
