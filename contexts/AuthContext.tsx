@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 import apiService, { storeToken, getToken, removeToken } from '../services/apiService';
 
+type UserType = 'student' | 'teacher';
 
 interface User {
     id: string;
@@ -11,6 +12,7 @@ interface User {
     lastName?: string;
     email: string | null;
     dietId: number | null;
+    userType: UserType;
 }
 
 interface DecodedToken {
@@ -21,6 +23,7 @@ interface DecodedToken {
     diet_id: number | null;
     last_name: string;
     is_first_access: boolean;
+    user_type: UserType;
     exp: number;
     iat: number;
 }
@@ -41,7 +44,7 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    signIn: (username?: string, password?: string) => Promise<void>;
+    signIn: (username?: string, password?: string, userType?: UserType) => Promise<void>;
     signUp: (formData: RegisterFormData) => Promise<void>;
     signOut: () => Promise<void>;
     isOnboarded: boolean;
@@ -50,9 +53,7 @@ interface AuthContextType {
     initialLoading: boolean;
 }
 
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -69,7 +70,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             firstName: decoded.first_name,
             lastName: decoded.last_name,
             email: decoded.email,
-            dietId: decoded.diet_id
+            dietId: decoded.diet_id,
+            userType: decoded.user_type || 'student',
         };
         setUser(currentUser);
         setToken(authToken);
@@ -101,7 +103,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     }
                 }
             } catch (e) {
-                console.error("Failed to load auth data from storage", e);
+
                 await signOut();
             } finally {
                 setInitialLoading(false);
@@ -110,11 +112,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loadAuthData();
     }, []);
 
-    const signIn = async (username?: string, password?: string) => {
-        if (!username || !password) throw new Error("username and password are required.");
+    const signIn = async (username?: string, password?: string, userType?: UserType) => {
+        if (!username || !password) throw new Error("Username and password are required.");
         setIsLoading(true);
         try {
-            const response = await apiService<AuthResponse>('/login', 'POST', { username, password }, false);
+            const response = await apiService<AuthResponse>('/login', 'POST', { username, password, user_type: userType }, false);
             await processToken(response.access);
         } catch (error: any) {
             const displayMessage = error.data?.message || error.message || "Login failed.";
@@ -136,13 +138,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 username: formData.email,
             };
 
-
-
             await apiService('/user/create', 'POST', requestBody, false);
-
-
-
-            await signIn(formData.email, formData.password);
+            await signIn(formData.email, formData.password, 'student');
 
         } catch (error: any) {
             const displayMessage = error.data?.message || error.message || "Registration failed.";
@@ -166,7 +163,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setIsOnboarded(true);
             await AsyncStorage.setItem('isOnboarded', JSON.stringify(true));
         } catch (error) {
-            console.error("Failed to complete onboarding on the server", error);
+
         }
     };
 

@@ -1,5 +1,5 @@
-import { API_BASE_URL } from '../constants/apiConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../constants/apiConfig';
 
 const TOKEN_KEY = 'authToken';
 
@@ -7,7 +7,7 @@ export const storeToken = async (token: string) => {
     try {
         await AsyncStorage.setItem(TOKEN_KEY, token);
     } catch (e) {
-        console.error('Failed to store token', e);
+
     }
 };
 
@@ -15,7 +15,7 @@ export const getToken = async (): Promise<string | null> => {
     try {
         return await AsyncStorage.getItem(TOKEN_KEY);
     } catch (e) {
-        console.error('Failed to get token', e);
+
         return null;
     }
 };
@@ -24,7 +24,7 @@ export const removeToken = async () => {
     try {
         await AsyncStorage.removeItem(TOKEN_KEY);
     } catch (e) {
-        console.error('Failed to remove token', e);
+
     }
 };
 
@@ -91,12 +91,25 @@ const request = async <T>(
         return responseData as T;
     } catch (error) {
         if (error instanceof ApiError) {
-            console.error(`API Error (${error.status}) to ${endpoint}: ${error.message}`, error.data);
+
             throw error;
         }
-        console.error(`Network or other error for ${endpoint}:`, error);
+
         throw new Error(`Failed to fetch from ${endpoint}. Please check your network connection.`);
     }
+};
+
+
+export const createWorkoutSession = async (workoutId: number) => {
+    return request('/user/workout/session', 'POST', { workout_id: workoutId });
+};
+
+export const getPreviousWorkoutSession = async (workoutId: number) => {
+    return request(`/user/workout/session/previous?workout_id=${workoutId}`, 'GET');
+};
+
+export const finishWorkoutSession = async (sessionData: any) => {
+    return request('/user/workout/session', 'POST', sessionData);
 };
 
 export default request;

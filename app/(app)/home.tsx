@@ -1,23 +1,23 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-    View,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
     ActivityIndicator,
     Modal,
-    SafeAreaView
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { Calendar, DateData } from 'react-native-calendars';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLocalization } from '../../contexts/LocalizationContext';
-import { StyledText } from '../../components/StyledText';
-import { useAuth } from '../../contexts/AuthContext';
-import apiService from '../../services/apiService';
 import { ProgressCard } from '../../components/ProgressCard';
-import { MainProgressCard } from '../../components/MainProgressCard';
-import { Ionicons } from '@expo/vector-icons';
+import { StyledText } from '../../components/StyledText';
+import { BaseColors } from '../../constants/Colors';
+import { useAuth } from '../../contexts/AuthContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import apiService from '../../services/apiService';
 
 interface ProgressData {
     cards_dict:{
@@ -121,9 +121,6 @@ export default function HomeScreen() {
         textDisabledColor: colors.disabled,
         arrowColor: colors.primary,
         monthTextColor: colors.text,
-        textDayFontWeight: '300',
-        textMonthFontWeight: 'bold',
-        textDayHeaderFontWeight: '300',
         textDayFontSize: 16,
         textMonthFontSize: 16,
         textDayHeaderFontSize: 16,
@@ -131,22 +128,33 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]}>
-            <ScrollView contentContainerStyle={styles.contentContainer}>
-                <StyledText type="title" style={[styles.greeting, { color: colors.text }]}>
-                    {getGreeting()}
-                </StyledText>
+            <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
 
-                <View style={[styles.datePickerContainer, { backgroundColor: colors.card }]}>
-                    <TouchableOpacity onPress={() => changeDate(-1)} style={styles.arrowButton}>
-                        <Ionicons name="chevron-back" size={26} color={colors.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setCalendarVisible(true)} style={styles.datePickerButton}>
-                        <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                        <StyledText style={[styles.dateText, { color: colors.text }]}>{formatDate(selectedDate)}</StyledText>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => changeDate(1)} style={styles.arrowButton} disabled={new Date().toDateString() === selectedDate.toDateString()}>
-                        <Ionicons name="chevron-forward" size={26} color={new Date().toDateString() === selectedDate.toDateString() ? colors.disabled : colors.primary} />
-                    </TouchableOpacity>
+                <View style={styles.headerSection}>
+                    <StyledText type="title" style={[styles.greeting, { color: colors.text }]}>
+                        {getGreeting()}
+                    </StyledText>
+                    
+                    <View style={[styles.datePickerContainer, { backgroundColor: colors.card }]}>
+                        <TouchableOpacity onPress={() => changeDate(-1)} style={styles.arrowButton}>
+                            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setCalendarVisible(true)} style={styles.datePickerButton}>
+                            <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+                            <StyledText style={[styles.dateText, { color: colors.text }]}>{formatDate(selectedDate)}</StyledText>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={() => changeDate(1)} 
+                            style={styles.arrowButton} 
+                            disabled={new Date().toDateString() === selectedDate.toDateString()}
+                        >
+                            <Ionicons 
+                                name="chevron-forward" 
+                                size={24} 
+                                color={new Date().toDateString() === selectedDate.toDateString() ? colors.disabled : colors.primary} 
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <Modal
@@ -163,36 +171,104 @@ export default function HomeScreen() {
                                 markedDates={markedDates}
                                 maxDate={formatDateForAPI(new Date())}
                                 theme={calendarTheme}
-                                key={language} // Force re-render on language change
+                                key={language}
                             />
                         </View>
                     </TouchableOpacity>
                 </Modal>
 
                 {isLoading ? (
-                    <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                        <StyledText style={[styles.loadingText, { color: colors.placeholderText }]}>
+                            Carregando dados...
+                        </StyledText>
+                    </View>
                 ) : error ? (
                     <View style={styles.centeredMessage}>
-                        <StyledText type="error">{error}</StyledText>
+                        <Ionicons name="alert-circle-outline" size={48} color={BaseColors.error} />
+                        <StyledText type="error" style={styles.errorText}>{error}</StyledText>
                     </View>
                 ) : progressData ? (
-                    <>
-                        <MainProgressCard label={t('calories')} consumed={progressData.cards_dict.total_kcals} goal={progressData.cards_dict.kcals_goal} color="#F97316" unit="kcal" />
-                        <View style={styles.cardsContainer}>
-                            <View style={styles.cardItem}>
-                                <ProgressCard label={t('protein')} consumed={progressData.cards_dict.total_proteins} goal={progressData.cards_dict.proteins_goal} color="#3B82F6" unit="g" />
+                    <View style={styles.progressSection}>
+
+                        <View style={[styles.heroCard, { backgroundColor: colors.card }]}>
+                            <View style={styles.heroHeader}>
+                                <View style={styles.heroTitleContainer}>
+                                    <Ionicons name="flame-outline" size={24} color="#F97316" />
+                                    <StyledText style={[styles.heroLabel, { color: colors.text }]}>
+                                        {t('calories')}
+                                    </StyledText>
+                                </View>
+                                <View style={styles.heroValues}>
+                                    <StyledText style={[styles.heroConsumed, { color: colors.text }]}>
+                                        {Math.round(progressData.cards_dict.total_kcals)}
+                                    </StyledText>
+                                    <StyledText style={[styles.heroGoal, { color: colors.placeholderText }]}>
+                                        / {Math.round(progressData.cards_dict.kcals_goal)} kcal
+                                    </StyledText>
+                                </View>
                             </View>
-                            <View style={styles.cardItem}>
-                                <ProgressCard label={t('carbs')} consumed={progressData.cards_dict.total_carbs} goal={progressData.cards_dict.carbs_goal} color="#10B981" unit="g" />
-                            </View>
-                            <View style={styles.cardItem}>
-                                <ProgressCard label={t('fat')} consumed={progressData.cards_dict.total_fats} goal={progressData.cards_dict.fats_goal} color="#EAB308" unit="g" />
+                            <View style={styles.heroProgressContainer}>
+                                <View style={[styles.heroProgressBar, { backgroundColor: colors.inputBackground }]}>
+                                    <View 
+                                        style={[
+                                            styles.heroProgressFill, 
+                                            { 
+                                                backgroundColor: '#F97316',
+                                                width: `${Math.min((progressData.cards_dict.total_kcals / progressData.cards_dict.kcals_goal) * 100, 100)}%`
+                                            }
+                                        ]} 
+                                    />
+                                </View>
+                                <StyledText style={[styles.heroPercentage, { color: '#F97316' }]}>
+                                    {Math.round((progressData.cards_dict.total_kcals / progressData.cards_dict.kcals_goal) * 100)}%
+                                </StyledText>
                             </View>
                         </View>
-                    </>
+
+
+                        <View style={styles.macrosSection}>
+                            <StyledText style={[styles.sectionTitle, { color: colors.text }]}>
+                                Macronutrientes
+                            </StyledText>
+                            <View style={styles.macrosGrid}>
+                                <View style={styles.macroCard}>
+                                    <ProgressCard 
+                                        label={t('protein')} 
+                                        consumed={progressData.cards_dict.total_proteins} 
+                                        goal={progressData.cards_dict.proteins_goal} 
+                                        color="#3B82F6" 
+                                        unit="g" 
+                                    />
+                                </View>
+                                <View style={styles.macroCard}>
+                                    <ProgressCard 
+                                        label={t('carbs')} 
+                                        consumed={progressData.cards_dict.total_carbs} 
+                                        goal={progressData.cards_dict.carbs_goal} 
+                                        color="#10B981" 
+                                        unit="g" 
+                                    />
+                                </View>
+                                <View style={styles.macroCard}>
+                                    <ProgressCard 
+                                        label={t('fat')} 
+                                        consumed={progressData.cards_dict.total_fats} 
+                                        goal={progressData.cards_dict.fats_goal} 
+                                        color="#EAB308" 
+                                        unit="g" 
+                                    />
+                                </View>
+                            </View>
+                        </View>
+                    </View>
                 ) : (
                     <View style={styles.centeredMessage}>
-                        <StyledText>{t('noDataForDay')}</StyledText>
+                        <Ionicons name="nutrition-outline" size={48} color={colors.placeholderText} />
+                        <StyledText style={[styles.noDataText, { color: colors.placeholderText }]}>
+                            {t('noDataForDay')}
+                        </StyledText>
                     </View>
                 )}
             </ScrollView>
@@ -201,16 +277,164 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1 },
-    contentContainer: { paddingHorizontal: 20, paddingBottom: 20 },
-    greeting: { fontSize: 28, fontWeight: 'bold', marginTop: 16, marginBottom: 20 },
-    datePickerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 15, marginBottom: 24, paddingHorizontal: 10 },
-    datePickerButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
-    arrowButton: { padding: 10 },
-    dateText: { marginLeft: 10, fontSize: 16, fontWeight: '500' },
-    modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
-    modalContent: { width: '90%', borderRadius: 15 },
-    cardsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6, marginTop: 12 },
-    cardItem: { width: '50%', paddingHorizontal: 6, marginBottom: 12 },
-    centeredMessage: { marginTop: 50, alignItems: 'center', justifyContent: 'center' }
+    safeArea: { 
+        flex: 1 
+    },
+    contentContainer: { 
+        paddingHorizontal: 20, 
+        paddingBottom: 20 
+    },
+    headerSection: {
+        marginTop: 16,
+        marginBottom: 24,
+    },
+    greeting: { 
+        fontSize: 32, 
+        fontWeight: '700', 
+        marginBottom: 20,
+        lineHeight: 38,
+    },
+    datePickerContainer: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        borderRadius: 16, 
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    datePickerButton: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingVertical: 12,
+        flex: 1,
+        justifyContent: 'center',
+    },
+    arrowButton: { 
+        padding: 8 
+    },
+    dateText: { 
+        marginLeft: 8, 
+        fontSize: 16, 
+        fontWeight: '600' 
+    },
+    modalOverlay: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: 'rgba(0,0,0,0.6)' 
+    },
+    modalContent: { 
+        width: '90%', 
+        borderRadius: 20,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
+    loadingContainer: {
+        marginTop: 60,
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+    },
+    progressSection: {
+        gap: 24,
+    },
+    heroCard: {
+        borderRadius: 20,
+        padding: 24,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+    },
+    heroHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 20,
+    },
+    heroTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    heroLabel: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    heroValues: {
+        alignItems: 'flex-end',
+    },
+    heroConsumed: {
+        fontSize: 32,
+        fontWeight: '800',
+        lineHeight: 36,
+    },
+    heroGoal: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    heroProgressContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    heroProgressBar: {
+        flex: 1,
+        height: 12,
+        borderRadius: 6,
+        overflow: 'hidden',
+    },
+    heroProgressFill: {
+        height: '100%',
+        borderRadius: 6,
+    },
+    heroPercentage: {
+        fontSize: 16,
+        fontWeight: '700',
+        minWidth: 40,
+        textAlign: 'right',
+    },
+    macrosSection: {
+        gap: 16,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    macrosGrid: { 
+        flexDirection: 'row', 
+        flexWrap: 'wrap', 
+        marginHorizontal: -6 
+    },
+    macroCard: { 
+        width: '50%', 
+        paddingHorizontal: 6, 
+        marginBottom: 12 
+    },
+    centeredMessage: { 
+        marginTop: 60, 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        gap: 16,
+    },
+    errorText: {
+        textAlign: 'center',
+        fontSize: 16,
+    },
+    noDataText: {
+        fontSize: 16,
+        textAlign: 'center',
+    },
 });

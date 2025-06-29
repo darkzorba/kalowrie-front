@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { View, StyleSheet, Modal, SafeAreaView, TouchableOpacity, Text } from 'react-native';
 
 export default function AppTabLayout() {
     const { colors } = useTheme();
@@ -11,19 +11,24 @@ export default function AppTabLayout() {
 
     const actionOptions = [
         {
-            label: 'Add Meal',
-            icon: 'add-circle-outline' as const,
+            label: 'Adicionar Refeição',
+            icon: 'restaurant-outline' as const,
             onPress: () => router.push('/add-meal-simple')
         },
         {
-            label: 'Track by Description',
+            label: 'Rastrear por Descrição',
             icon: 'document-text-outline' as const,
             onPress: () => router.push('/track-by-description')
         },
         {
-            label: 'Track By Photo',
+            label: 'Rastrear por Foto',
             icon: 'camera-outline' as const,
             onPress: () => router.push('/track-by-photo')
+        },
+        {
+            label: 'Adicionar Água',
+            icon: 'water-outline' as const,
+            onPress: () => router.push('/add-meal-simple') // TODO: Implementar tela de água
         }
     ];
 
@@ -37,55 +42,56 @@ export default function AppTabLayout() {
                     tabBarStyle: {
                         backgroundColor: colors.card,
                         borderTopColor: colors.border,
-                        height: 65,
-                        paddingTop: 5,
-                        paddingBottom: 5,
+                        height: 70,
+                        paddingTop: 8,
+                        paddingBottom: 12,
+                        paddingHorizontal: 10,
+                        elevation: 8,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: -2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 8,
                     },
                     tabBarLabelStyle: {
                         fontWeight: '600',
-                        fontSize: 11,
+                        fontSize: 12,
+                        marginTop: 4,
                     },
                 }}
             >
                 <Tabs.Screen
                     name="home"
                     options={{
-                        title: 'Dashboard',
+                        title: 'Início',
                         tabBarIcon: ({ color, size }) => (
-                            <Ionicons name="stats-chart" size={size} color={color} />
+                            <Ionicons name="home-outline" size={size} color={color} />
                         ),
                     }}
                 />
                 <Tabs.Screen
                     name="diet"
                     options={{
-                        title: 'My Diet',
+                        title: 'Dieta',
                         tabBarIcon: ({ color, size }) => (
-                            <Ionicons name="restaurant" size={size} color={color} />
+                            <Ionicons name="restaurant-outline" size={size} color={color} />
                         ),
                     }}
                 />
                 <Tabs.Screen
-                    name="add-placeholder"
-                    listeners={{
-                        tabPress: (e) => {
-                            e.preventDefault();
-                            setActionSheetVisible(true);
-                        },
-                    }}
+                    name="workout"
                     options={{
-                        title: 'Add',
+                        title: 'Treino',
                         tabBarIcon: ({ color, size }) => (
-                            <Ionicons name="add-circle" size={size} color={color} />
+                            <Ionicons name="fitness-outline" size={size} color={color} />
                         ),
                     }}
                 />
                 <Tabs.Screen
                     name="menu"
                     options={{
-                        title: 'Menu',
+                        title: 'Perfil',
                         tabBarIcon: ({ color, size }) => (
-                            <Ionicons name="menu" size={size} color={color} />
+                            <Ionicons name="person-outline" size={size} color={color} />
                         ),
                     }}
                 />
@@ -105,38 +111,55 @@ export default function AppTabLayout() {
                         href: null
                     }}
                 />
+                <Tabs.Screen
+                    name="active-workout"
+                    options={{
+                        href: null
+                    }}
+                />
             </Tabs>
 
+
+            <TouchableOpacity
+                style={[styles.fab, { backgroundColor: colors.primary }]}
+                onPress={() => setActionSheetVisible(true)}
+                activeOpacity={0.8}
+            >
+                <Ionicons name="add" size={28} color="#FFFFFF" />
+            </TouchableOpacity>
+
             <Modal
-                animationType="fade"
+                animationType="slide"
                 transparent={true}
                 visible={isActionSheetVisible}
                 onRequestClose={() => setActionSheetVisible(false)}
             >
                 <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setActionSheetVisible(false)}>
                     <SafeAreaView style={[styles.modalContent, { backgroundColor: colors.card }]}>
-                        {actionOptions.map((option, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={[
-                                    styles.optionButton,
-                                    index < actionOptions.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: 1 }
-                                ]}
-                                onPress={() => {
-                                    setActionSheetVisible(false);
-                                    option.onPress();
-                                }}
-                            >
-                                <Ionicons name={option.icon} size={24} color={colors.text} />
-                                <Text style={[styles.optionLabel, { color: colors.text }]}>{option.label}</Text>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>Adicionar</Text>
+                            <TouchableOpacity onPress={() => setActionSheetVisible(false)}>
+                                <Ionicons name="close" size={24} color={colors.text} />
                             </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity
-                            style={[styles.cancelButton, { backgroundColor: colors.inputBackground }]}
-                            onPress={() => setActionSheetVisible(false)}
-                        >
-                            <Text style={[styles.cancelLabel, { color: colors.text }]}>Cancel</Text>
-                        </TouchableOpacity>
+                        </View>
+                        
+                        <View style={styles.optionsGrid}>
+                            {actionOptions.map((option, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[styles.optionCard, { backgroundColor: colors.inputBackground }]}
+                                    onPress={() => {
+                                        setActionSheetVisible(false);
+                                        option.onPress();
+                                    }}
+                                >
+                                    <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
+                                        <Ionicons name={option.icon} size={24} color={colors.primary} />
+                                    </View>
+                                    <Text style={[styles.optionLabel, { color: colors.text }]}>{option.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </SafeAreaView>
                 </TouchableOpacity>
             </Modal>
@@ -145,33 +168,71 @@ export default function AppTabLayout() {
 }
 
 const styles = StyleSheet.create({
+    fab: {
+        position: 'absolute',
+        bottom: 90,
+        right: 20,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
     modalOverlay: {
         flex: 1,
         justifyContent: 'flex-end',
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalContent: {
-        marginHorizontal: 10,
-        marginBottom: 20,
-        borderRadius: 15,
-        overflow: 'hidden',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingTop: 20,
+        paddingBottom: 40,
+        maxHeight: '70%',
     },
-    optionButton: {
+    modalHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.1)',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    optionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        justifyContent: 'space-between',
+    },
+    optionCard: {
+        width: '48%',
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
     },
     optionLabel: {
-        fontSize: 18,
-        marginLeft: 15,
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'center',
     },
-    cancelButton: {
-        marginTop: 10,
-        padding: 20,
-        alignItems: 'center',
-    },
-    cancelLabel: {
-        fontSize: 18,
-        fontWeight: '600',
-    }
 });

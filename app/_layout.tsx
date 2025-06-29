@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import { MinimizedWorkoutTab } from '@/components/MinimizedWorkoutTab';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { LocalizationProvider } from '@/contexts/LocalizationContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { WorkoutFormProvider } from '@/contexts/WorkoutFormContext';
 import { SplashScreen, Stack, useRouter } from 'expo-router';
-import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
-import { LocalizationProvider } from '../contexts/LocalizationContext';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,9 +17,12 @@ const InitialLayout = () => {
 
     useEffect(() => {
         if (initialLoading) return;
+
         if (!user) {
             router.replace('/(auth)/login');
-        } else if (!isOnboarded) {
+        } else if (user.userType === 'teacher') {
+            router.replace('/(teacher)/dashboard');
+        } else if (user.userType === 'student' && !isOnboarded) {
             router.replace('/(onboarding)/user-details');
         } else {
             router.replace('/(app)/home');
@@ -45,7 +50,9 @@ const InitialLayout = () => {
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                 <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
                 <Stack.Screen name="(app)" options={{ headerShown: false }} />
+                <Stack.Screen name="(teacher)" options={{ headerShown: false }} />
             </Stack>
+            <MinimizedWorkoutTab />
         </>
     );
 };
@@ -55,7 +62,9 @@ export default function RootLayoutNav() {
         <LocalizationProvider>
             <ThemeProvider>
                 <AuthProvider>
-                    <InitialLayout />
+                    <WorkoutFormProvider>
+                        <InitialLayout />
+                    </WorkoutFormProvider>
                 </AuthProvider>
             </ThemeProvider>
         </LocalizationProvider>

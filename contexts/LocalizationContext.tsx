@@ -25,7 +25,7 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
                     setLanguageState(storedLang);
                 }
             } catch (e) {
-                console.error("Failed to load language from storage", e);
+
             }
         };
         loadLanguage();
@@ -36,7 +36,7 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
             await AsyncStorage.setItem(LANGUAGE_KEY, lang);
             setLanguageState(lang);
         } catch (e) {
-            console.error("Failed to save language to storage", e);
+
         }
     };
 

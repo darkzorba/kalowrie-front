@@ -1,7 +1,7 @@
 export const Tints = {
-  purple: '#8A2BE2',
-  lightPurple: '#E6E6FA',
-  darkPurple: '#4B0082',
+  primary: '#90A4AE',
+  lightPrimary: '#CFD8DC',
+  darkPrimary: '#607D8B',
 };
 
 export const BaseColors = {
@@ -16,8 +16,8 @@ export const BaseColors = {
 export const LightThemeColors = {
   background: BaseColors.white,
   text: BaseColors.black,
-  primary: Tints.purple,
-  secondary: Tints.lightPurple,
+  primary: Tints.primary,
+  secondary: Tints.lightPrimary,
   card: '#F5F5F5',
   border: BaseColors.lightGrey,
   inputBackground: '#F0F0F0',
@@ -28,14 +28,14 @@ export const LightThemeColors = {
   headerText: BaseColors.black,
   icon: BaseColors.black,
   tabIconDefault: BaseColors.grey,
-  tabIconSelected: Tints.purple,
+  tabIconSelected: Tints.primary,
 };
 
 export const DarkThemeColors = {
   background: BaseColors.black,
   text: BaseColors.white,
-  primary: Tints.purple,
-  secondary: Tints.darkPurple,
+  primary: Tints.primary,
+  secondary: Tints.darkPrimary,
   card: BaseColors.darkGrey,
   border: '#444444',
   inputBackground: '#2C2C2E',
@@ -46,7 +46,7 @@ export const DarkThemeColors = {
   headerText: BaseColors.white,
   icon: BaseColors.white,
   tabIconDefault: BaseColors.lightGrey,
-  tabIconSelected: Tints.purple,
+  tabIconSelected: Tints.primary,
 };
 
 export type ColorScheme = typeof LightThemeColors;
@@ -55,7 +55,6 @@ export default {
   light: LightThemeColors,
   dark: DarkThemeColors,
   common: {
-    purple: Tints.purple,
     error: BaseColors.error,
     white: BaseColors.white,
     black: BaseColors.black,

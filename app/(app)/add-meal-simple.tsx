@@ -163,7 +163,7 @@ export default function AddMealSimpleScreen() {
         const fetchFoods = async () => {
             setIsFetchingFoods(true);
             try {
-                const response = await apiService<FoodsApiResponse>('/user/diet/food/all', 'GET');
+                const response = await apiService<FoodsApiResponse>('/food/all', 'GET');
                 if (response.status && Array.isArray(response.foods_list)) {
                     const foodOptions = response.foods_list.flat().map((food, index) => ({
                         label: food.name,
