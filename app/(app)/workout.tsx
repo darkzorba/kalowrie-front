@@ -128,15 +128,6 @@ export default function WorkoutScreen() {
         });
     };
 
-    const viewEvolution = (workout: TrainingWorkout) => {
-        router.push({
-            pathname: '/(app)/exercise-evolution',
-            params: {
-                workoutId: workout.id.toString()
-            }
-        });
-    };
-
     if (isLoading) {
         return (
             <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]}>
@@ -269,16 +260,6 @@ export default function WorkoutScreen() {
                                             Iniciar Treino
                                         </StyledText>
                                         <Ionicons name="play" size={16} color="#FFFFFF" />
-                                    </TouchableOpacity>
-                                    
-                                    <TouchableOpacity
-                                        style={[styles.secondaryButton, { borderColor: colors.primary }]}
-                                        onPress={() => viewEvolution(workout)}
-                                    >
-                                        <StyledText style={[styles.secondaryButtonText, { color: colors.primary }]}>
-                                            Visualizar Evolução
-                                        </StyledText>
-                                        <Ionicons name="trending-up" size={16} color={colors.primary} />
                                     </TouchableOpacity>
                                 </View>
                             </TouchableOpacity>
@@ -420,22 +401,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#FFFFFF',
-    },
-    secondaryButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 8,
-        borderWidth: 2,
-    },
-    secondaryButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-        textAlign: 'center',
     },
     centeredMessage: {
         marginTop: 60,
