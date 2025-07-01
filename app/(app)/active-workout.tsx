@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -85,13 +85,11 @@ export default function ActiveWorkoutScreen() {
     const { t } = useLocalization();
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { workoutData } = params;
+    const { workoutData, ts, workoutId, sessionId } = params;
     const { showMinimizedWorkout, hideMinimizedWorkout, resetTrigger, clearResetTrigger } = useWorkoutForm();
 
 
-    console.log('🔍 Active-workout montado, params:', params);
-    console.log('🔍 workoutData:', workoutData);
-    console.log('🔍 Tipo do workoutData:', typeof workoutData);
+
 
     const [session, setSession] = useState<WorkoutSession | null>(null);
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -105,42 +103,203 @@ export default function ActiveWorkoutScreen() {
     const [selectedSeconds, setSelectedSeconds] = useState<number>(0);
     const [activeRestTimer, setActiveRestTimer] = useState<{exerciseId: string, timerId: any} | null>(null);
     const [originalWorkoutData, setOriginalWorkoutData] = useState<any>(null);
-    const [sessionId, setSessionId] = useState<string | null>(null);
+    const [apiSessionId, setApiSessionId] = useState<string | null>(null);
     const [debugStatus, setDebugStatus] = useState<string>('Inicializando...');
+    const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
+
+    const initializationRef = useRef<{
+        sessionId: string | null;
+        inProgress: boolean;
+    }>({ sessionId: null, inProgress: false });
 
     const SESSION_KEY = 'kalowrie_workout_session';
-
-
     const [sessionCache, setSessionCache] = useState<{[key: string]: string}>({});
 
 
-    const getStoredSessionId = async (workoutId: string): Promise<string | null> => {
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+
+    useEffect(() => {
+        return () => {
+            if (activeRestTimer) {
+                clearInterval(activeRestTimer.timerId);
+            }
+        };
+    }, [activeRestTimer]);
+
+
+    useEffect(() => {
+        if (resetTrigger && resetTrigger > 0) {
+
+            resetWorkoutSession();
+            clearResetTrigger();
+        }
+    }, [resetTrigger]);
+
+
+    useEffect(() => {
+
+
+
+
+
+        if (initializationRef.current.sessionId === sessionId && isInitialized) {
+
+            return;
+        }
+
+
+        if (initializationRef.current.inProgress) {
+
+            return;
+        }
+
+
+        if (!workoutData || !ts || !workoutId || !sessionId) {
+
+            setDebugStatus('Parâmetros inválidos - Redirecionando...');
+            setTimeout(() => router.back(), 2000);
+            return;
+        }
+
+
+        initializationRef.current = { sessionId: sessionId as string, inProgress: true };
+
+
+
+        initializeSession();
+    }, [workoutData, ts, workoutId, sessionId]);
+
+    const initializeSession = async () => {
         try {
+            setDebugStatus('Analisando dados do treino...');
 
-            const cacheKey = `workout_${workoutId}`;
-            if (sessionCache[cacheKey]) {
 
-                return sessionCache[cacheKey];
+
+            const workout = JSON.parse(workoutData as string);
+
+
+
+            if (!workout || !Array.isArray(workout.exercises_list) || workout.exercises_list.length === 0) {
+                throw new Error('Dados do treino são inválidos');
             }
 
+            setDebugStatus('Criando sessão local...');
+            setOriginalWorkoutData(workout);
+
+
+            const sessionExercises: SessionExercise[] = workout.exercises_list.map((exercise: any, index: number) => {
+                const setsCount = Number(exercise.sets) || 3;
+                const sets: WorkoutSet[] = Array.from({ length: setsCount }, (_, setIndex) => ({
+                    id: `${index}-${setIndex}`,
+                    weight: '',
+                    reps: '',
+                    rir: '',
+                    completed: false,
+                    previousWeight: '',
+                    previousReps: '',
+                    previousRir: ''
+                }));
+
+                return {
+                    id: index.toString(),
+                    name: exercise.exercise_name || 'Exercício sem nome',
+                    sets,
+                    notes: '',
+                    restTime: 120,
+                    isResting: false,
+                    targetMinReps: Number(exercise.min_reps) || 8,
+                    targetMaxReps: Number(exercise.max_reps) || 12,
+                    targetSets: setsCount,
+                    exercise_image: exercise.exercise_image || '',
+                    observations: exercise.observations ?? null
+                };
+            });
+
+            const newSession: WorkoutSession = {
+                id: sessionId as string,
+                name: workout.workout_name || 'Treino sem nome',
+                exercises: sessionExercises,
+                startTime: new Date(),
+                isActive: true
+            };
+
+
+            setSession(newSession);
+            setIsInitialized(true);
+            setDebugStatus('Sessão criada com sucesso!');
+
+
+
+            loadApiDataInBackground(workout, newSession);
+
+        } catch (error) {
+
+            setDebugStatus(`Erro: ${error}`);
+            setTimeout(() => router.back(), 3000);
+        } finally {
+            initializationRef.current.inProgress = false;
+        }
+    };
+
+
+    const loadApiDataInBackground = async (workoutData: any, currentSession: WorkoutSession) => {
+        try {
+
+            
+            const workoutId = workoutData.id || workoutData.workout_id;
+            
+
+            await removeStoredSessionId(workoutId.toString());
+            
+
+
+            const sessionResponse = await createWorkoutSession(workoutId) as CreateSessionResponse;
+            if (sessionResponse?.session_id) {
+                setApiSessionId(sessionResponse.session_id);
+                await storeSessionId(workoutId.toString(), sessionResponse.session_id);
+
+            }
+            
+
+
+            const previousData = await getPreviousWorkoutSession(workoutId) as PreviousSessionResponse;
+            if (previousData?.status && Array.isArray(previousData.previous_session_list)) {
+                const updatedSession = updateSessionWithPreviousData(currentSession, previousData.previous_session_list, workoutData);
+                setSession(updatedSession);
+
+            }
+            
+        } catch (error) {
+
+
+        }
+    };
+
+    const getStoredSessionId = async (workoutId: string): Promise<string | null> => {
+        try {
+            const cacheKey = `workout_${workoutId}`;
+            if (sessionCache[cacheKey]) {
+                return sessionCache[cacheKey];
+            }
 
             if (Platform.OS !== 'ios') {
                 try {
                     const storedSessionId = await AsyncStorage.getItem(`${SESSION_KEY}_${workoutId}`);
                     if (storedSessionId) {
-
                         setSessionCache(prev => ({ ...prev, [cacheKey]: storedSessionId }));
-
                         return storedSessionId;
                     }
                 } catch (storageError) {
 
                 }
-            } else {
-
             }
-
             return null;
         } catch (error) {
 
@@ -152,16 +311,11 @@ export default function ActiveWorkoutScreen() {
     const storeSessionId = async (workoutId: string, sessionId: string): Promise<void> => {
         try {
             const cacheKey = `workout_${workoutId}`;
-
-
             setSessionCache(prev => ({ ...prev, [cacheKey]: sessionId }));
-
-
 
             if (Platform.OS !== 'ios') {
                 try {
                     await AsyncStorage.setItem(`${SESSION_KEY}_${workoutId}`, sessionId);
-
                 } catch (storageError) {
 
                 }
@@ -175,21 +329,15 @@ export default function ActiveWorkoutScreen() {
     const removeStoredSessionId = async (workoutId: string): Promise<void> => {
         try {
             const cacheKey = `workout_${workoutId}`;
-
-
             setSessionCache(prev => {
                 const newCache = { ...prev };
                 delete newCache[cacheKey];
                 return newCache;
             });
 
-
-
             if (Platform.OS !== 'ios') {
                 try {
-
                     await AsyncStorage.removeItem(`${SESSION_KEY}_${workoutId}`);
-
                 } catch (storageError) {
 
                 }
@@ -202,329 +350,6 @@ export default function ActiveWorkoutScreen() {
 
     const minutes = Array.from({ length: 11 }, (_, i) => ({ label: `${i}`, value: i }));
     const seconds = Array.from({ length: 60 }, (_, i) => ({ label: `${i.toString().padStart(2, '0')}`, value: i }));
-
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-
-    useEffect(() => {
-        if (resetTrigger && resetTrigger > 0) {
-            // Se vier um trigger de reset enquanto não há sessão ativa, apenas limpamos estados.
-            console.log('🔄 resetTrigger detectado na montagem, limpando e prosseguindo');
-            resetWorkoutSession();
-            clearResetTrigger();
-        }
-    }, [resetTrigger]);
-
-
-
-    useEffect(() => {
-        return () => {
-            if (activeRestTimer) {
-                clearInterval(activeRestTimer.timerId);
-            }
-        };
-    }, [activeRestTimer]);
-
-
-    useEffect(() => {
-        console.log('🔍 useEffect executado, workoutData:', workoutData);
-        console.log('🔍 workoutData é truthy?', !!workoutData);
-
-        if (workoutData) {
-            try {
-                setDebugStatus('Recebendo dados do treino...');
-                console.log('🔍 Tentando parsear workoutData...');
-                const workout = JSON.parse(workoutData as string);
-                console.log('🔍 Workout parseado:', workout);
-                setDebugStatus('Dados parseados, inicializando...');
-
-                initializeSession(workout);
-            } catch (error) {
-                console.log('🔍 Erro ao parsear:', error);
-                setDebugStatus('Erro ao parsear dados: ' + error);
-
-                router.back();
-            }
-        } else {
-            console.log('🔍 Nenhum workoutData recebido!');
-            console.log('🔍 Todos os parâmetros:', params);
-            setDebugStatus('Nenhum dado de treino recebido - Parâmetros: ' + JSON.stringify(params));
-
-
-            setTimeout(() => {
-                router.back();
-            }, 3000);
-        }
-    }, [workoutData]);
-
-
-    useEffect(() => {
-        return () => {
-
-            if (activeRestTimer) {
-                clearInterval(activeRestTimer.timerId);
-                setActiveRestTimer(null);
-            }
-
-
-            setSession(null);
-            setSessionCache({});
-            setOriginalWorkoutData(null);
-            setSessionId(null);
-            setDebugStatus('Limpando componente...');
-
-
-
-        };
-    }, []);
-
-    const initializeSession = (workoutData: any) => {
-        try {
-            setDebugStatus('Validando dados do treino...');
-
-            if (!workoutData || !Array.isArray(workoutData.exercises_list)) {
-                setDebugStatus('Dados inválidos detectados');
-                Alert.alert(
-                    'Erro',
-                    'Dados do treino são inválidos. Voltando para a tela anterior.',
-                    [{ text: 'OK', onPress: () => router.back() }]
-                );
-                return;
-            }
-
-            setDebugStatus('Limpando cache anterior...');
-
-            setSessionCache({});
-
-            setOriginalWorkoutData(workoutData);
-
-            setDebugStatus('Criando sessão local...');
-            console.log('🛠 chamando createSessionWithData');
-            createSessionWithData(workoutData);
-
-            setDebugStatus('Carregando dados da API...');
-            loadWorkoutSessionData(workoutData);
-        } catch (error) {
-            setDebugStatus('Erro na inicialização: ' + error);
-            Alert.alert(
-                'Erro',
-                'Não foi possível inicializar o treino. Tente novamente.',
-                [{ text: 'OK', onPress: () => router.back() }]
-            );
-        }
-    };
-
-    const createSessionWithData = (workoutData: any) => {
-        console.log('🛠 dentro de createSessionWithData');
-        try {
-            setDebugStatus('Mapeando exercícios...');
-
-            if (!Array.isArray(workoutData.exercises_list) || workoutData.exercises_list.length === 0) {
-                throw new Error('A lista de exercícios está vazia.');
-            }
-
-            const sessionExercises: SessionExercise[] = workoutData.exercises_list
-                .filter((exercise: any) => exercise && typeof exercise === 'object')
-                .map((exercise: any, index: number) => {
-                    // Garantir número seguro de séries
-                    let setsCount = Number(exercise.sets);
-                    if (isNaN(setsCount) || setsCount <= 0) setsCount = 3;
-
-                    const sets: WorkoutSet[] = Array.from({ length: setsCount }, (_, setIndex) => ({
-                        id: `${index}-${setIndex}`,
-                        weight: '',
-                        reps: '',
-                        rir: '',
-                        completed: false,
-                        previousWeight: '',
-                        previousReps: '',
-                        previousRir: ''
-                    }));
-
-                    return {
-                        id: index.toString(),
-                        name: exercise.exercise_name || 'Exercício sem nome',
-                        sets,
-                        notes: '',
-                        restTime: 120,
-                        isResting: false,
-                        targetMinReps: Number(exercise.min_reps) || 8,
-                        targetMaxReps: Number(exercise.max_reps) || 12,
-                        targetSets: setsCount,
-                        exercise_image: exercise.exercise_image || '',
-                        observations: exercise.observations ?? null
-                    } as SessionExercise;
-                });
-
-            if (sessionExercises.length === 0) {
-                throw new Error('Não foi possível mapear exercícios válidos.');
-            }
-
-            const newSession: WorkoutSession = {
-                id: Date.now().toString(),
-                name: workoutData.workout_name || 'Treino sem nome',
-                exercises: sessionExercises,
-                startTime: new Date(),
-                isActive: true
-            };
-
-            setSession(newSession);
-            console.log('🛠 sessão criada OK');
-            setDebugStatus('Sessão criada com sucesso!');
-        } catch (err: any) {
-            console.error('Erro ao criar sessão', err);
-            setDebugStatus('Erro ao criar sessão: ' + (err?.message || err));
-            Alert.alert('Erro', 'Não foi possível criar a sessão de treino.', [
-                { text: 'OK', onPress: () => router.back() }
-            ]);
-        }
-    };
-
-    const loadWorkoutSessionData = async (workoutData: any) => {
-        try {
-            const workoutId = workoutData.id || workoutData.workout_id;
-
-
-
-
-            await removeStoredSessionId(workoutId.toString());
-
-            try {
-                const sessionResponse = await createWorkoutSession(workoutId) as CreateSessionResponse;
-
-
-                if (sessionResponse?.session_id) {
-                    setSessionId(sessionResponse.session_id);
-                    await storeSessionId(workoutId.toString(), sessionResponse.session_id);
-
-
-                    loadPreviousSessionData(workoutId);
-
-                } else {
-
-
-                }
-            } catch (sessionError) {
-
-
-
-            }
-        } catch (error) {
-
-        }
-    };
-
-    const loadPreviousSessionData = async (workoutId: number) => {
-        try {
-            const previousSessionData = await getPreviousWorkoutSession(workoutId) as PreviousSessionResponse;
-
-
-            if (previousSessionData &&
-                previousSessionData.status &&
-                Array.isArray(previousSessionData.previous_session_list)) {
-
-
-                updateSessionWithPreviousData(previousSessionData.previous_session_list);
-            } else {
-
-            }
-        } catch (previousError) {
-
-
-        }
-    };
-
-    const updateSessionWithPreviousData = (previousSessionList: PreviousExerciseData[]) => {
-        try {
-
-
-            setSession(currentSession => {
-                if (!currentSession || !originalWorkoutData) {
-
-                    return currentSession;
-                }
-
-
-                if (!Array.isArray(previousSessionList)) {
-
-                    return currentSession;
-                }
-
-
-                const previousDataMap = new Map<number, PreviousExerciseData>();
-                previousSessionList.forEach(exercise => {
-                    if (exercise && typeof exercise.exercise_id === 'number') {
-                        previousDataMap.set(exercise.exercise_id, exercise);
-                    }
-                });
-
-                const updatedExercises = currentSession.exercises.map((exercise, exerciseIndex) => {
-                    try {
-
-                        if (!originalWorkoutData.exercises_list || !originalWorkoutData.exercises_list[exerciseIndex]) {
-                            return exercise;
-                        }
-
-
-                        const workoutExercise = originalWorkoutData.exercises_list[exerciseIndex];
-                        const exerciseId = workoutExercise?.id || workoutExercise?.exercise_id;
-
-
-                        if (!exerciseId || isNaN(Number(exerciseId))) {
-                            return exercise;
-                        }
-
-
-                        const previousExerciseData = previousDataMap.get(Number(exerciseId));
-
-                        if (previousExerciseData && Array.isArray(previousExerciseData.sets)) {
-                            const updatedSets = exercise.sets.map((set, setIndex) => {
-                                try {
-
-                                    const previousSet = previousExerciseData.sets.find(
-                                        prevSet => prevSet && prevSet.set_number === setIndex + 1
-                                    );
-
-                                    if (previousSet) {
-                                        const updatedSet = {
-                                            ...set,
-                                            previousWeight: previousSet.weight != null ? String(previousSet.weight) : '',
-                                            previousReps: previousSet.reps_done != null ? String(previousSet.reps_done) : '',
-                                            previousRir: previousSet.reps_in_reserve != null ? String(previousSet.reps_in_reserve) : ''
-                                        };
-
-                                        return updatedSet;
-                                    }
-                                    return set;
-                                } catch (setError) {
-
-                                    return set;
-                                }
-                            });
-
-                            return { ...exercise, sets: updatedSets };
-                        }
-                        return exercise;
-                    } catch (exerciseError) {
-
-                        return exercise;
-                    }
-                });
-
-
-                return { ...currentSession, exercises: updatedExercises };
-            });
-        } catch (error) {
-
-
-        }
-    };
 
     const formatElapsedTime = (startTime: Date): string => {
         const elapsed = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
@@ -725,32 +550,27 @@ export default function ActiveWorkoutScreen() {
     };
 
     const resetWorkoutSession = () => {
-
-
-
         if (activeRestTimer) {
             clearInterval(activeRestTimer.timerId);
             setActiveRestTimer(null);
-
         }
-
 
         setSession(null);
         setRestTimers({});
         setExerciseNotes({});
-        setSessionId(null);
+        setApiSessionId(null);
         setOriginalWorkoutData(null);
         setSessionCache({});
         setDebugStatus('Inicializando...');
+        setIsInitialized(false);
 
+
+        initializationRef.current = { sessionId: null, inProgress: false };
 
         setShowNotesModal(false);
         setShowRestModal(false);
         setSelectedExerciseId('');
         setSelectedRestExerciseId('');
-
-
-
     };
 
     const performDiscardWorkout = async () => {
@@ -780,11 +600,23 @@ export default function ActiveWorkoutScreen() {
         }
     };
 
-    const discardWorkout = async () => {
+    const discardWorkout =  () => {
+        Alert.alert(
+            'Descartar Treino',
+            'Tem certeza que deseja descartar este treino? Todos os dados serão perdidos.',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Descartar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await performDiscardWorkout();
+                        router.replace('/(app)/workout');
+                    }
 
-        await performDiscardWorkout();
-        router.replace('/(app)/workout');
-
+                }
+            ]
+        )
     };
 
     const finishWorkout = () => {
@@ -827,7 +659,7 @@ export default function ActiveWorkoutScreen() {
 
                             const sessionData = {
                                 workout_id: originalWorkoutData.id || originalWorkoutData.workout_id,
-                                session_id: sessionId,
+                                session_id: apiSessionId,
                                 total_kgs: workoutTotalKgs,
                                 is_finished: true,
                                 exercises_list: exercisesList
@@ -868,6 +700,71 @@ export default function ActiveWorkoutScreen() {
         if (session && originalWorkoutData) {
             showMinimizedWorkout(originalWorkoutData, session.startTime);
             router.back();
+        }
+    };
+
+    const updateSessionWithPreviousData = (currentSession: WorkoutSession, previousSessionList: PreviousExerciseData[], workoutData: any): WorkoutSession => {
+        try {
+            if (!currentSession || !previousSessionList || !workoutData) {
+                return currentSession;
+            }
+
+            const previousDataMap = new Map<number, PreviousExerciseData>();
+            previousSessionList.forEach(exercise => {
+                if (exercise && typeof exercise.exercise_id === 'number') {
+                    previousDataMap.set(exercise.exercise_id, exercise);
+                }
+            });
+
+            const updatedExercises = currentSession.exercises.map((exercise, exerciseIndex) => {
+                try {
+                    if (!workoutData.exercises_list || !workoutData.exercises_list[exerciseIndex]) {
+                        return exercise;
+                    }
+
+                    const workoutExercise = workoutData.exercises_list[exerciseIndex];
+                    const exerciseId = workoutExercise?.id || workoutExercise?.exercise_id;
+
+                    if (!exerciseId || isNaN(Number(exerciseId))) {
+                        return exercise;
+                    }
+
+                    const previousExerciseData = previousDataMap.get(Number(exerciseId));
+
+                    if (previousExerciseData && Array.isArray(previousExerciseData.sets)) {
+                        const updatedSets = exercise.sets.map((set, setIndex) => {
+                            try {
+                                const previousSet = previousExerciseData.sets.find(
+                                    prevSet => prevSet && prevSet.set_number === setIndex + 1
+                                );
+
+                                if (previousSet) {
+                                    const updatedSet = {
+                                        ...set,
+                                        previousWeight: previousSet.weight != null ? String(previousSet.weight) : '',
+                                        previousReps: previousSet.reps_done != null ? String(previousSet.reps_done) : '',
+                                        previousRir: previousSet.reps_in_reserve != null ? String(previousSet.reps_in_reserve) : ''
+                                    };
+
+                                    return updatedSet;
+                                }
+                                return set;
+                            } catch (setError) {
+                                return set;
+                            }
+                        });
+
+                        return { ...exercise, sets: updatedSets };
+                    }
+                    return exercise;
+                } catch (exerciseError) {
+                    return exercise;
+                }
+            });
+
+            return { ...currentSession, exercises: updatedExercises };
+        } catch (error) {
+            return currentSession;
         }
     };
 

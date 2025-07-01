@@ -120,19 +120,34 @@ export default function WorkoutScreen() {
     };
 
     const startWorkout = (workout: TrainingWorkout) => {
-        console.log('🚀 startWorkout chamado com:', workout);
-        const workoutDataString = JSON.stringify(workout);
-        console.log('🚀 workoutData serializado:', workoutDataString);
-        console.log('🚀 Tamanho dos dados:', workoutDataString.length, 'caracteres');
+
         
+
+        const timestamp = Date.now();
+        const sessionId = `${workout.id}_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+        const workoutDataString = JSON.stringify({
+            ...workout,
+            _sessionId: sessionId,
+            _timestamp: timestamp
+        });
+        
+
+
+
+
+        
+
         router.push({
             pathname: '/(app)/active-workout',
             params: {
-                workoutData: workoutDataString
+                workoutData: workoutDataString,
+                ts: timestamp.toString(),
+                workoutId: workout.id.toString(),
+                sessionId: sessionId
             }
         });
         
-        console.log('🚀 Navegação executada!');
+
     };
 
     if (isLoading) {
