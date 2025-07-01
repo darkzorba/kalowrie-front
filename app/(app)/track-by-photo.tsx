@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Image, Platform, Animated } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLocalization } from '../../contexts/LocalizationContext';
-import { StyledText } from '../../components/StyledText';
-import { StyledButton } from '../../components/StyledButton';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Image, Platform, StyleSheet, View } from 'react-native';
+import { StyledButton } from '../../components/StyledButton';
+import { StyledText } from '../../components/StyledText';
+import { useLocalization } from '../../contexts/LocalizationContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import apiService from '../../services/apiService';
-import { useRouter, useFocusEffect } from 'expo-router';
 
 const TRACKING_MESSAGES_KEYS = [
     'analyzingPhoto',

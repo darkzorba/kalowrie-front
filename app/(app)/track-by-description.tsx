@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Text, Animated } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLocalization } from '../../contexts/LocalizationContext';
-import { StyledText } from '../../components/StyledText';
-import { StyledTextInput } from '../../components/StyledTextInput';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
 import { StyledButton } from '../../components/StyledButton';
 import { StyledPicker } from '../../components/StyledPicker';
-import { Ionicons } from '@expo/vector-icons';
-import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
-import apiService from '../../services/apiService';
-import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { StyledText } from '../../components/StyledText';
+import { StyledTextInput } from '../../components/StyledTextInput';
 import { useAuth } from '../../contexts/AuthContext';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalization } from '../../contexts/LocalizationContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import apiService from '../../services/apiService';
 
 interface IngredientInput { id: number; name: string; quantity: string; default_unit: string; }
 interface CalculatedIngredient { name: string; total_carbs: number; total_proteins: number; total_fats: number; total_kcals: number; quantity: number; default_uni: string; }
@@ -140,7 +139,7 @@ export default function TrackByDescriptionScreen() {
                 list_ingredients: calculatedMeal.ingredients.map(i => ({ name: i.name, quantity: i.quantity, default_unit: i.default_uni }))
             };
             await apiService('/user/diet/meal', 'POST', body);
-            Alert.alert(t('success'), t('mealSavedSuccess'), [{ text: 'OK', onPress: () => router.back() }]);
+            Alert.alert(t('success'), t('mealSavedSuccess'), [{ text: t('ok'), onPress: () => router.back() }]);
         } catch (e: any) {
             Alert.alert(t('error'), e.message || t('mealSaveFailed'));
         } finally {

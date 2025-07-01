@@ -1,16 +1,16 @@
-import React, {useState, useEffect, useCallback, useMemo} from 'react';
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Text, Modal, FlatList, TextInput, SafeAreaView } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useLocalization } from "@/contexts/LocalizationContext";
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
+import { StyledButton } from '../../components/StyledButton';
+import { StyledPicker } from '../../components/StyledPicker';
 import { StyledText } from '../../components/StyledText';
 import { StyledTextInput } from '../../components/StyledTextInput';
-import { StyledButton } from '../../components/StyledButton';
-import {useLocalization} from "@/contexts/LocalizationContext";
-import { StyledPicker } from '../../components/StyledPicker';
-import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
-import apiService from '../../services/apiService';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import apiService from '../../services/apiService';
 
 
 interface Ingredient {
@@ -72,23 +72,29 @@ const FoodSearchModal: React.FC<{
     const { colors } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredFoods = foods.filter(food =>
-        food.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        food.food.category_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredFoods = foods.filter(food => {
+        if (!searchQuery.trim()) return true;
+        
+        const queryWords = searchQuery.toLowerCase().trim().split(/\s+/);
+        const foodName = (food.label?.toLowerCase() || '');
+        const categoryName = (food.food?.category_name?.toLowerCase() || '');
+        const searchableText = `${foodName} ${categoryName}`;
+        
+        return queryWords.every(word => searchableText.includes(word));
+    });
 
     const renderItem = ({ item }: { item: FoodOption }) => (
         <TouchableOpacity onPress={() => onSelect(item)} style={[styles.itemContainer, { borderBottomColor: colors.border }]}>
             <View style={styles.itemInfo}>
-                <Text style={[styles.itemText, { color: colors.text }]}>{item.food.name}</Text>
+                <Text style={[styles.itemText, { color: colors.text }]}>{item.food?.name || 'Nome não disponível'}</Text>
                 <Text style={[styles.itemSubText, { color: colors.placeholderText }]}>
-                    {item.food.category_name} - per {item.food.quantity}g
+                    {item.food?.category_name || 'Categoria não disponível'} - per {item.food?.quantity || 0}g
                 </Text>
             </View>
             <View style={styles.itemMacros}>
-                <Text style={[styles.itemMacroText, { color: colors.text }]}>P: {item.food.proteins_g}g</Text>
-                <Text style={[styles.itemMacroText, { color: colors.text }]}>C: {item.food.carbs_g}g</Text>
-                <Text style={[styles.itemMacroText, { color: colors.text }]}>F: {item.food.fats_g}g</Text>
+                <Text style={[styles.itemMacroText, { color: colors.text }]}>P: {item.food?.proteins_g || 0}g</Text>
+                <Text style={[styles.itemMacroText, { color: colors.text }]}>C: {item.food?.carbs_g || 0}g</Text>
+                <Text style={[styles.itemMacroText, { color: colors.text }]}>F: {item.food?.fats_g || 0}g</Text>
             </View>
         </TouchableOpacity>
     );
@@ -303,7 +309,7 @@ export default function AddMealSimpleScreen() {
             await apiService('/user/diet/meal', 'POST', requestBody);
 
             Alert.alert(t("success"), t("successSaveMeal"), [
-                { text: "OK", onPress: () => router.back() }
+                { text: t("ok"), onPress: () => router.back() }
             ]);
         } catch (e: any) {
             setError(e.message || t('mealSaveFailed'));

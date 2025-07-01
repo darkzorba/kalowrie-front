@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { FlatList, Modal, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
 
 interface ApiFood {
@@ -31,23 +31,29 @@ const FoodSearchModal: React.FC<FoodSearchModalProps> = ({ isVisible, onClose, f
     const { colors } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredFoods = foods.filter(food =>
-        food.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        food.food.category_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredFoods = foods.filter(food => {
+        if (!searchQuery.trim()) return true;
+        
+        const queryWords = searchQuery.toLowerCase().trim().split(/\s+/);
+        const foodName = (food.label?.toLowerCase() || '');
+        const categoryName = (food.food?.category_name?.toLowerCase() || '');
+        const searchableText = `${foodName} ${categoryName}`;
+        
+        return queryWords.every(word => searchableText.includes(word));
+    });
 
     const renderItem = ({ item }: { item: FoodOption }) => (
         <TouchableOpacity onPress={() => onSelect(item)} style={[styles.itemContainer, { borderBottomColor: colors.border }]}>
              <View>
-                <Text style={[styles.itemText, { color: colors.text }]}>{item.food.name}</Text>
+                <Text style={[styles.itemText, { color: colors.text }]}>{item.food?.name || 'Nome não disponível'}</Text>
                 <Text style={[styles.itemSubText, { color: colors.placeholderText }]}>
-                    {item.food.category_name} - {Math.round(item.food.calories)} kcal
+                    {item.food?.category_name || 'Categoria não disponível'} - {Math.round(item.food?.calories || 0)} kcal
                 </Text>
             </View>
             <View style={styles.itemMacros}>
-                <Text style={[styles.itemMacroText, { color: colors.text }]}>P: {item.food.proteins_g}g</Text>
-                <Text style={[styles.itemMacroText, { color: colors.text }]}>C: {item.food.carbs_g}g</Text>
-                <Text style={[styles.itemMacroText, { color: colors.text }]}>F: {item.food.fats_g}g</Text>
+                <Text style={[styles.itemMacroText, { color: colors.text }]}>P: {item.food?.proteins_g || 0}g</Text>
+                <Text style={[styles.itemMacroText, { color: colors.text }]}>C: {item.food?.carbs_g || 0}g</Text>
+                <Text style={[styles.itemMacroText, { color: colors.text }]}>F: {item.food?.fats_g || 0}g</Text>
             </View>
         </TouchableOpacity>
     );

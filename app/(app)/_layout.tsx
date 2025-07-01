@@ -2,31 +2,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function AppTabLayout() {
     const { colors } = useTheme();
     const router = useRouter();
+    const { t } = useLocalization();
     const [isActionSheetVisible, setActionSheetVisible] = useState(false);
 
     const actionOptions = [
         {
-            label: 'Adicionar Refeição',
+            label: t('quick_addMeal'),
             icon: 'restaurant-outline' as const,
             onPress: () => router.push('/add-meal-simple')
         },
         {
-            label: 'Rastrear por Descrição',
+            label: t('quick_trackByDescription'),
             icon: 'document-text-outline' as const,
             onPress: () => router.push('/track-by-description')
         },
         {
-            label: 'Rastrear por Foto',
+            label: t('quick_trackByPhoto'),
             icon: 'camera-outline' as const,
             onPress: () => router.push('/track-by-photo')
         },
         {
-            label: 'Adicionar Água',
+            label: t('quick_addWater'),
             icon: 'water-outline' as const,
             onPress: () => router.push('/add-meal-simple') // TODO: Implementar tela de água
         }
@@ -62,7 +64,7 @@ export default function AppTabLayout() {
                 <Tabs.Screen
                     name="home"
                     options={{
-                        title: 'Início',
+                        title: t('tab_home'),
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="home-outline" size={size} color={color} />
                         ),
@@ -71,7 +73,7 @@ export default function AppTabLayout() {
                 <Tabs.Screen
                     name="diet"
                     options={{
-                        title: 'Dieta',
+                        title: t('tab_diet'),
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="restaurant-outline" size={size} color={color} />
                         ),
@@ -80,7 +82,7 @@ export default function AppTabLayout() {
                 <Tabs.Screen
                     name="workout"
                     options={{
-                        title: 'Treino',
+                        title: t('tab_workout'),
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="fitness-outline" size={size} color={color} />
                         ),
@@ -89,7 +91,7 @@ export default function AppTabLayout() {
                 <Tabs.Screen
                     name="menu"
                     options={{
-                        title: 'Perfil',
+                        title: t('tab_profile'),
                         tabBarIcon: ({ color, size }) => (
                             <Ionicons name="person-outline" size={size} color={color} />
                         ),
@@ -119,7 +121,6 @@ export default function AppTabLayout() {
                 />
             </Tabs>
 
-
             <TouchableOpacity
                 style={[styles.fab, { backgroundColor: colors.primary }]}
                 onPress={() => setActionSheetVisible(true)}
@@ -137,7 +138,7 @@ export default function AppTabLayout() {
                 <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPressOut={() => setActionSheetVisible(false)}>
                     <SafeAreaView style={[styles.modalContent, { backgroundColor: colors.card }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: colors.text }]}>Adicionar</Text>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('quick_add')}</Text>
                             <TouchableOpacity onPress={() => setActionSheetVisible(false)}>
                                 <Ionicons name="close" size={24} color={colors.text} />
                             </TouchableOpacity>

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { ProgressCard } from '../../components/ProgressCard';
+import { RecentWorkoutsCard } from '../../components/RecentWorkoutsCard';
 import { StyledText } from '../../components/StyledText';
 import { BaseColors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
@@ -73,7 +74,7 @@ export default function HomeScreen() {
                     const data = await apiService<ProgressData>(`/user/diet/get/cards?date=${selectedDateString}`, 'GET');
                     setProgressData(data);
                 } catch (e: any) {
-                    const errorMessage = e.data?.message || e.message || "Could not load progress for this date.";
+                    const errorMessage = e.data?.message || e.message || t('couldNotLoadProgress');
                     setError(errorMessage);
                     setProgressData(null);
                 } finally {
@@ -181,7 +182,7 @@ export default function HomeScreen() {
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color={colors.primary} />
                         <StyledText style={[styles.loadingText, { color: colors.placeholderText }]}>
-                            Carregando dados...
+                            {t('loadingData')}
                         </StyledText>
                     </View>
                 ) : error ? (
@@ -230,7 +231,7 @@ export default function HomeScreen() {
 
                         <View style={styles.macrosSection}>
                             <StyledText style={[styles.sectionTitle, { color: colors.text }]}>
-                                Macronutrientes
+                                {t('macronutrients')}
                             </StyledText>
                             <View style={styles.macrosGrid}>
                                 <View style={styles.macroCard}>
@@ -271,6 +272,9 @@ export default function HomeScreen() {
                         </StyledText>
                     </View>
                 )}
+
+
+                <RecentWorkoutsCard />
             </ScrollView>
         </SafeAreaView>
     );

@@ -5,12 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyledButton } from '../../components/StyledButton';
 import { StyledText } from '../../components/StyledText';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocalization } from '../../contexts/LocalizationContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function ProfileScreen() {
     const { colors, toggleTheme, isDark } = useTheme();
     const { signOut, user } = useAuth();
     const insets = useSafeAreaInsets();
+    const { t } = useLocalization();
 
     const handleSignOut = async () => {
         await signOut();
@@ -19,26 +21,26 @@ export default function ProfileScreen() {
     const profileOptions = [
         {
             icon: 'person-outline',
-            title: 'Dados Pessoais',
-            subtitle: 'Editar informações do perfil',
+            title: t('profile_personalData'),
+            subtitle: t('profile_editInfo'),
             onPress: () => {}
         },
         {
             icon: 'fitness-outline',
-            title: 'Progresso',
-            subtitle: 'Histórico de peso e medidas',
+            title: t('profile_progress'),
+            subtitle: t('profile_weightHistory'),
             onPress: () => {}
         },
         {
             icon: 'trending-up-outline',
-            title: 'Gráficos',
-            subtitle: 'Visualizar progresso',
+            title: t('profile_charts'),
+            subtitle: t('profile_viewProgress'),
             onPress: () => {}
         },
         {
             icon: 'people-outline',
-            title: 'Personal Trainer',
-            subtitle: 'Gerenciar conexão',
+            title: t('profile_personalTrainer'),
+            subtitle: t('profile_manageConnection'),
             onPress: () => {}
         }
     ];
@@ -46,20 +48,20 @@ export default function ProfileScreen() {
     const settingsOptions = [
         {
             icon: 'notifications-outline',
-            title: 'Notificações',
-            subtitle: 'Configurar lembretes',
+            title: t('profile_notifications'),
+            subtitle: t('profile_configureReminders'),
             onPress: () => {}
         },
         {
             icon: 'shield-outline',
-            title: 'Privacidade',
-            subtitle: 'Configurações de segurança',
+            title: t('profile_privacy'),
+            subtitle: t('profile_securitySettings'),
             onPress: () => {}
         },
         {
             icon: 'help-circle-outline',
-            title: 'Ajuda',
-            subtitle: 'FAQ e suporte',
+            title: t('profile_help'),
+            subtitle: t('profile_faqSupport'),
             onPress: () => {}
         }
     ];
@@ -72,9 +74,8 @@ export default function ProfileScreen() {
         >
             <View style={styles.contentContainer}>
                 <StyledText type="title" style={[styles.title, { color: colors.text }]}>
-                    Perfil
+                    {t('profile_title')}
                 </StyledText>
-
 
                 <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
                     <View style={styles.profileSection}>
@@ -94,10 +95,9 @@ export default function ProfileScreen() {
                     </View>
                 </View>
 
-
                 <View style={styles.section}>
                     <StyledText style={[styles.sectionTitle, { color: colors.text }]}>
-                        Conta
+                        {t('profile_account')}
                     </StyledText>
                     <View style={[styles.optionsCard, { backgroundColor: colors.card }]}>
                         {profileOptions.map((option, index) => (
@@ -126,10 +126,9 @@ export default function ProfileScreen() {
                     </View>
                 </View>
 
-
                 <View style={styles.section}>
                     <StyledText style={[styles.sectionTitle, { color: colors.text }]}>
-                        Configurações
+                        {t('profile_settings')}
                     </StyledText>
                     <View style={[styles.optionsCard, { backgroundColor: colors.card }]}>
                         {settingsOptions.map((option, index) => (
@@ -156,17 +155,16 @@ export default function ProfileScreen() {
                             </TouchableOpacity>
                         ))}
                         
-
                         <View style={[styles.optionItem, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                             <View style={[styles.optionIcon, { backgroundColor: colors.primary + '20' }]}>
                                 <Ionicons name="color-palette-outline" size={20} color={colors.primary} />
                             </View>
                             <View style={styles.optionContent}>
                                 <StyledText style={[styles.optionTitle, { color: colors.text }]}>
-                                    Tema
+                                    {t('profile_theme')}
                                 </StyledText>
                                 <StyledText style={[styles.optionSubtitle, { color: colors.placeholderText }]}>
-                                    {isDark ? 'Modo escuro' : 'Modo claro'}
+                                    {isDark ? t('profile_darkMode') : t('profile_lightMode')}
                                 </StyledText>
                             </View>
                             <View style={[styles.themeSelectorContainer, { backgroundColor: colors.inputBackground }]}>
@@ -187,9 +185,8 @@ export default function ProfileScreen() {
                     </View>
                 </View>
 
-
                 <StyledButton
-                    title="Sair da Conta"
+                    title={t('profile_signOut')}
                     onPress={handleSignOut}
                     variant='outlined'
                     color={colors.primary}

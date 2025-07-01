@@ -104,7 +104,7 @@ export default function ActiveWorkoutScreen() {
     const [activeRestTimer, setActiveRestTimer] = useState<{exerciseId: string, timerId: any} | null>(null);
     const [originalWorkoutData, setOriginalWorkoutData] = useState<any>(null);
     const [apiSessionId, setApiSessionId] = useState<string | null>(null);
-    const [debugStatus, setDebugStatus] = useState<string>('Inicializando...');
+    const [debugStatus, setDebugStatus] = useState<string>(t('initializing'));
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
 
@@ -163,7 +163,7 @@ export default function ActiveWorkoutScreen() {
 
         if (!workoutData || !ts || !workoutId || !sessionId) {
 
-            setDebugStatus('Parâmetros inválidos - Redirecionando...');
+            setDebugStatus(t('invalidParametersRedirecting'));
             setTimeout(() => router.back(), 2000);
             return;
         }
@@ -178,7 +178,7 @@ export default function ActiveWorkoutScreen() {
 
     const initializeSession = async () => {
         try {
-            setDebugStatus('Analisando dados do treino...');
+            setDebugStatus(t('analyzingWorkoutData'));
 
 
 
@@ -190,7 +190,7 @@ export default function ActiveWorkoutScreen() {
                 throw new Error('Dados do treino são inválidos');
             }
 
-            setDebugStatus('Criando sessão local...');
+            setDebugStatus(t('creatingLocalSession'));
             setOriginalWorkoutData(workout);
 
 
@@ -233,7 +233,7 @@ export default function ActiveWorkoutScreen() {
 
             setSession(newSession);
             setIsInitialized(true);
-            setDebugStatus('Sessão criada com sucesso!');
+            setDebugStatus(t('sessionCreatedSuccessfully'));
 
 
 
@@ -241,7 +241,7 @@ export default function ActiveWorkoutScreen() {
 
         } catch (error) {
 
-            setDebugStatus(`Erro: ${error}`);
+            setDebugStatus(`${t('errorOccurred')}: ${error}`);
             setTimeout(() => router.back(), 3000);
         } finally {
             initializationRef.current.inProgress = false;
@@ -454,7 +454,7 @@ export default function ActiveWorkoutScreen() {
                     clearInterval(timer);
                     setActiveRestTimer(null);
 
-                    Alert.alert('Descanso finalizado!', 'É hora da próxima série!');
+                    Alert.alert(t('restFinished'), t('timeForNextSet'));
                     return { ...prev, [exerciseId]: 0 };
                 }
                 return { ...prev, [exerciseId]: newTime };
@@ -561,7 +561,7 @@ export default function ActiveWorkoutScreen() {
         setApiSessionId(null);
         setOriginalWorkoutData(null);
         setSessionCache({});
-        setDebugStatus('Inicializando...');
+        setDebugStatus(t('initializing'));
         setIsInitialized(false);
 
 
@@ -602,12 +602,12 @@ export default function ActiveWorkoutScreen() {
 
     const discardWorkout =  () => {
         Alert.alert(
-            'Descartar Treino',
-            'Tem certeza que deseja descartar este treino? Todos os dados serão perdidos.',
+            t('discardWorkoutTitle'),
+            t('discardWorkoutMessage'),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Descartar',
+                    text: t('discard'),
                     style: 'destructive',
                     onPress: async () => {
                         await performDiscardWorkout();
@@ -621,12 +621,12 @@ export default function ActiveWorkoutScreen() {
 
     const finishWorkout = () => {
         Alert.alert(
-            'Finalizar Treino',
-            'Deseja finalizar a sessão de treino?',
+            t('finishWorkoutTitle'),
+            t('finishWorkoutMessage'),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Finalizar',
+                    text: t('finish'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -685,9 +685,9 @@ export default function ActiveWorkoutScreen() {
                         } catch (error) {
 
                             Alert.alert(
-                                'Erro',
-                                'Não foi possível finalizar o treino. Tente novamente.',
-                                [{ text: 'OK' }]
+                                t('errorTitle'),
+                                t('couldNotFinishWorkout'),
+                                [{ text: t('ok') }]
                             );
                         }
                     }
@@ -805,7 +805,7 @@ export default function ActiveWorkoutScreen() {
                         style={[styles.finishButton, { backgroundColor: colors.primary }]}
                         onPress={finishWorkout}
                     >
-                        <StyledText style={styles.finishButtonText}>Concluir</StyledText>
+                        <StyledText style={styles.finishButtonText}>{t('complete')}</StyledText>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -813,21 +813,21 @@ export default function ActiveWorkoutScreen() {
 
             <View style={[styles.statsSection, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
                 <View style={styles.statItem}>
-                    <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>Duração</StyledText>
+                    <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>{t('duration')}</StyledText>
                     <StyledText style={[styles.statValue, { color: colors.primary }]}>
                         {formatElapsedTime(session.startTime)}
                     </StyledText>
                 </View>
 
                 <View style={styles.statItem}>
-                    <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>Volume</StyledText>
+                    <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>{t('volume')}</StyledText>
                     <StyledText style={[styles.statValue, { color: colors.text }]}>
                         {calculateWorkoutTotalKgs().toFixed(0)} kg
                     </StyledText>
                 </View>
 
                 <View style={styles.statItem}>
-                    <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>Séries</StyledText>
+                    <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>{t('sets')}</StyledText>
                     <StyledText style={[styles.statValue, { color: colors.text }]}>
                         {calculateCompletedSets()}
                     </StyledText>
@@ -866,7 +866,7 @@ export default function ActiveWorkoutScreen() {
                                     onPress={() => openNotesModal(exercise.id)}
                                 >
                                     <StyledText style={[styles.notesText, { color: colors.placeholderText }]}>
-                                        {exercise.notes || 'Adicionar notas aqui...'}
+                                        {exercise.notes || t('addNotesHere')}
                                     </StyledText>
                                 </TouchableOpacity>
 
@@ -877,7 +877,7 @@ export default function ActiveWorkoutScreen() {
                                 >
                                     <Ionicons name="time-outline" size={16} color={colors.primary} />
                                     <StyledText style={[styles.restText, { color: colors.primary }]}>
-                                        Tempo de Descanso: {formatRestTime(restTimers[exercise.id] || exercise.restTime)}
+                                        {t('restTime')}: {formatRestTime(restTimers[exercise.id] || exercise.restTime)}
                                     </StyledText>
                                     {restTimers[exercise.id] && restTimers[exercise.id] < 30 && (
                                         <Ionicons name="warning" size={16} color={BaseColors.error} />
@@ -891,11 +891,11 @@ export default function ActiveWorkoutScreen() {
                         <View style={styles.setsTable}>
 
                             <View style={[styles.tableHeader, { backgroundColor: colors.inputBackground }]}>
-                                <StyledText style={[styles.headerCell, { color: colors.text, flex: 0.8 }]}>SÉRIE</StyledText>
+                                <StyledText style={[styles.headerCell, { color: colors.text, flex: 0.8 }]}>{t('series').toUpperCase()}</StyledText>
                                 <StyledText style={[styles.headerCell, { color: colors.text, flex: 1.2 }]}>ANTERIOR</StyledText>
                                 <StyledText style={[styles.headerCell, { color: colors.text, flex: 1 }]}>KG</StyledText>
                                 <StyledText style={[styles.headerCell, { color: colors.text, flex: 1 }]}>REPS</StyledText>
-                                <StyledText style={[styles.headerCell, { color: colors.text, flex: 0.8 }]}>RIR</StyledText>
+                                <StyledText style={[styles.headerCell, { color: colors.text, flex: 0.8 }]}>{t('rir')}</StyledText>
                                 <View style={[styles.headerCell, { flex: 0.5 }]} />
                             </View>
 
@@ -992,7 +992,7 @@ export default function ActiveWorkoutScreen() {
                         >
                             <Ionicons name="add" size={20} color={colors.primary} />
                             <StyledText style={[styles.addSetText, { color: colors.primary }]}>
-                                Adicionar Série
+                                {t('addSet')}
                             </StyledText>
                         </TouchableOpacity>
                     </View>
@@ -1006,7 +1006,7 @@ export default function ActiveWorkoutScreen() {
                     }}
                 >
                     <Ionicons name="add" size={24} color={BaseColors.white} />
-                    <StyledText style={styles.addExerciseText}>Adicionar Exercício</StyledText>
+                                            <StyledText style={styles.addExerciseText}>{t('addExercise')}</StyledText>
                 </TouchableOpacity>
             </ScrollView>
 
@@ -1015,7 +1015,7 @@ export default function ActiveWorkoutScreen() {
                 <TouchableOpacity style={styles.footerButton}>
                     <Ionicons name="settings-outline" size={20} color={colors.text} />
                     <StyledText style={[styles.footerButtonText, { color: colors.text }]}>
-                        Definições
+                        {t('settings')}
                     </StyledText>
                 </TouchableOpacity>
 
@@ -1025,7 +1025,7 @@ export default function ActiveWorkoutScreen() {
                 >
                     <Ionicons name="trash-outline" size={20} color={BaseColors.error} />
                     <StyledText style={[styles.footerButtonText, { color: BaseColors.error }]}>
-                        Descartar Treino
+                        {t('discardWorkout')}
                     </StyledText>
                 </TouchableOpacity>
             </View>
@@ -1063,7 +1063,7 @@ export default function ActiveWorkoutScreen() {
                                 borderColor: colors.border
                             }]}
                             multiline
-                            placeholder="Adicione suas observações sobre este exercício..."
+                            placeholder={t('addObservations')}
                             placeholderTextColor={colors.placeholderText}
                             value={exerciseNotes[selectedExerciseId] || ''}
                             onChangeText={(text) => setExerciseNotes(prev => ({
@@ -1090,24 +1090,26 @@ export default function ActiveWorkoutScreen() {
                         </TouchableOpacity>
 
                         <StyledText style={[styles.modalTitle, { color: colors.text }]}>
-                            Tempo de Descanso
+                            {t('restTime')}
                         </StyledText>
 
                         <TouchableOpacity onPress={saveRestTime}>
                             <StyledText style={[styles.modalSaveText, { color: colors.primary }]}>
-                                Salvar
+                                {t('save')}
                             </StyledText>
                         </TouchableOpacity>
                     </View>
 
                     <View style={styles.modalContent}>
                         <StyledText style={[styles.modalLabel, { color: colors.text }]}>
-                            Configure o tempo de descanso:
+                            {t('configureRestTime')}
                         </StyledText>
 
                         <View style={styles.wheelPickerContainer}>
                             <View style={styles.pickerSection}>
-                                <StyledText style={[styles.pickerLabel, { color: colors.text }]}>Minutos</StyledText>
+                                <StyledText style={[styles.pickerLabel, { color: colors.text }]}>
+                                    {t('minutes')}
+                                </StyledText>
                                 <ScrollView
                                     style={styles.pickerScroll}
                                     showsVerticalScrollIndicator={false}
@@ -1133,7 +1135,9 @@ export default function ActiveWorkoutScreen() {
                             <StyledText style={[styles.timeSeparator, { color: colors.text }]}>:</StyledText>
 
                             <View style={styles.pickerSection}>
-                                <StyledText style={[styles.pickerLabel, { color: colors.text }]}>Segundos</StyledText>
+                                <StyledText style={[styles.pickerLabel, { color: colors.text }]}>
+                                    {t('seconds')}
+                                </StyledText>
                                 <ScrollView
                                     style={styles.pickerScroll}
                                     showsVerticalScrollIndicator={false}
@@ -1159,7 +1163,7 @@ export default function ActiveWorkoutScreen() {
 
                         <View style={styles.previewContainer}>
                             <StyledText style={[styles.previewLabel, { color: colors.placeholderText }]}>
-                                Tempo selecionado:
+                                {t('selectedTime')}
                             </StyledText>
                             <StyledText style={[styles.previewTime, { color: colors.primary }]}>
                                 {selectedMinutes}:{selectedSeconds.toString().padStart(2, '0')}

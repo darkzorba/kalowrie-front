@@ -60,13 +60,13 @@ export default function WorkoutScreen() {
                 setWorkoutData([]);
             }
         } catch (e: any) {
-            const errorMessage = e.data?.message || e.message || "Não foi possível carregar os treinos.";
+            const errorMessage = e.data?.message || e.message || t('couldNotLoadWorkouts');
             setError(errorMessage);
             setWorkoutData([]);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useFocusEffect(
         useCallback(() => {
@@ -156,7 +156,7 @@ export default function WorkoutScreen() {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                     <StyledText style={[styles.loadingText, { color: colors.placeholderText }]}>
-                        Carregando treinos...
+                        {t('loadingWorkouts')}
                     </StyledText>
                 </View>
             </SafeAreaView>
@@ -173,7 +173,7 @@ export default function WorkoutScreen() {
                         style={[styles.retryButton, { backgroundColor: colors.primary }]}
                         onPress={fetchWorkoutData}
                     >
-                        <StyledText style={styles.retryButtonText}>Tentar Novamente</StyledText>
+                        <StyledText style={styles.retryButtonText}>{t('tryAgain')}</StyledText>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -184,21 +184,21 @@ export default function WorkoutScreen() {
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]}>
             <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
                 <StyledText type="title" style={[styles.title, { color: colors.text }]}>
-                    Meus Treinos
+                    {t('myWorkouts')}
                 </StyledText>
                 
                 <StyledText style={[styles.subtitle, { color: colors.placeholderText }]}>
-                    Esta semana
+                    {t('thisWeek')}
                 </StyledText>
 
                 {workoutData.length === 0 ? (
                     <View style={styles.centeredMessage}>
                         <Ionicons name="fitness-outline" size={48} color={colors.placeholderText} />
                         <StyledText style={[styles.noDataText, { color: colors.placeholderText }]}>
-                            Nenhum treino encontrado
+                            {t('noWorkoutsFound')}
                         </StyledText>
                         <StyledText style={[styles.noDataSubtext, { color: colors.placeholderText }]}>
-                            Entre em contato com seu personal trainer para receber seus treinos
+                            {t('contactPersonalTrainer')}
                         </StyledText>
                     </View>
                 ) : (
@@ -235,7 +235,7 @@ export default function WorkoutScreen() {
                                     <View style={styles.detailItem}>
                                         <Ionicons name="list-outline" size={16} color={colors.placeholderText} />
                                         <StyledText style={[styles.detailText, { color: colors.placeholderText }]}>
-                                            {getTotalExercises(workout.exercises_list)} exercícios
+                                            {getTotalExercises(workout.exercises_list)} {t('exercises')}
                                         </StyledText>
                                     </View>
                                     <View style={styles.detailItem}>
@@ -268,7 +268,7 @@ export default function WorkoutScreen() {
                                     ))}
                                     {workout.exercises_list.length > 3 && (
                                         <StyledText style={[styles.moreExercises, { color: colors.primary }]}>
-                                            +{workout.exercises_list.length - 3} mais exercícios
+                                            +{workout.exercises_list.length - 3} {t('moreExercises')}
                                         </StyledText>
                                     )}
                                 </View>
@@ -279,7 +279,7 @@ export default function WorkoutScreen() {
                                         onPress={() => startWorkout(workout)}
                                     >
                                         <StyledText style={styles.actionButtonText}>
-                                            Iniciar Treino
+                                            {t('startWorkout')}
                                         </StyledText>
                                         <Ionicons name="play" size={16} color="#FFFFFF" />
                                     </TouchableOpacity>

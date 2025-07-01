@@ -94,6 +94,29 @@ export const translations = {
         fat: 'Fat',
         substitutes: 'Substitutes:',
 
+        // --- Loading & Error Messages ---
+        loadingData: 'Loading data...',
+        couldNotLoadProgress: 'Could not load progress for this date.',
+        couldNotLoadDietPlan: 'Could not load your diet plan.',
+        macronutrients: 'Macronutrients',
+        recentWorkouts: 'Recent Workouts',
+        noWorkoutsLast7Days: 'No workouts recorded in the last 7 days',
+        viewDetails: 'View Details',
+        exercises: 'exercises',
+        series: 'series',
+
+        // --- Workout Screen ---
+        loadingWorkouts: 'Loading workouts...',
+        couldNotLoadWorkouts: 'Could not load workouts.',
+        tryAgain: 'Try Again',
+        myWorkouts: 'My Workouts',
+        thisWeek: 'This week',
+        noWorkoutsFound: 'No workouts found',
+        contactPersonalTrainer: 'Contact your personal trainer to receive your workouts',
+        startWorkout: 'Start Workout',
+        moreExercises: 'more exercises',
+        estimatedDuration: 'Estimated duration',
+
         // --- Add/Track Screens ---
         addMeal: 'Add a Meal',
         trackByDescription: 'Track by Description',
@@ -180,7 +203,6 @@ export const translations = {
         exerciseNotes: 'Exercise Notes',
         addNotesHere: 'Add notes here...',
         previous: 'Previous',
-        series: 'Series',
         reps: 'Reps',
         kg: 'KG',
         settings: 'Settings',
@@ -189,6 +211,9 @@ export const translations = {
         restFinished: 'Rest finished!',
         timeForNextSet: 'Time for the next set!',
         loadingSession: 'Loading session...',
+        complete: 'Complete',
+        save: 'Save',
+        selectedTime: 'Selected time:',
 
         // Teacher Section
         manageStudents: 'Manage Students',
@@ -321,11 +346,83 @@ export const translations = {
         editDiet: 'Edit Diet',
         dietSavedSuccess: 'Diet saved successfully!',
 
-        noWorkoutsFound: 'No workouts found',
         selectDayOfWeek: 'Select Day of Week',
         noExercisesAdded: 'No exercises added',
         workout: 'Workout',
         goBack: 'Go Back',
+
+        // --- Profile/Menu ---
+        profile_title: 'Profile',
+        profile_account: 'Account',
+        profile_settings: 'Settings',
+        profile_personalData: 'Personal Data',
+        profile_editInfo: 'Edit profile information',
+        profile_progress: 'Progress',
+        profile_weightHistory: 'Weight and measurements history',
+        profile_charts: 'Charts',
+        profile_viewProgress: 'View progress',
+        profile_personalTrainer: 'Personal Trainer',
+        profile_manageConnection: 'Manage connection',
+        profile_notifications: 'Notifications',
+        profile_configureReminders: 'Configure reminders',
+        profile_privacy: 'Privacy',
+        profile_securitySettings: 'Security settings',
+        profile_help: 'Help',
+        profile_faqSupport: 'FAQ and support',
+        profile_theme: 'Theme',
+        profile_darkMode: 'Dark mode',
+        profile_lightMode: 'Light mode',
+        profile_signOut: 'Sign Out',
+
+        // --- Tabs/Bottom Navigation ---
+        tab_home: 'Home',
+        tab_diet: 'Diet',
+        tab_workout: 'Workout',
+        tab_profile: 'Profile',
+        // --- Quick Actions ---
+        quick_add: 'Add',
+        quick_addMeal: 'Add Meal',
+        quick_trackByDescription: 'Track by Description',
+        quick_trackByPhoto: 'Track by Photo',
+        quick_addWater: 'Add Water',
+        
+        // Alert Messages
+        discardWorkoutTitle: 'Discard Workout',
+        discardWorkoutMessage: 'Are you sure you want to discard this workout? All data will be lost.',
+        discard: 'Discard',
+        finishWorkoutTitle: 'Finish Workout',
+        finishWorkoutMessage: 'Do you want to finish the workout session?',
+        finish: 'Finish',
+        errorTitle: 'Error',
+        couldNotFinishWorkout: 'Could not finish the workout. Please try again.',
+        ok: 'OK',
+        
+        // Debug Status Messages
+        initializing: 'Initializing...',
+        invalidParametersRedirecting: 'Invalid parameters - Redirecting...',
+        analyzingWorkoutData: 'Analyzing workout data...',
+        workoutDataInvalid: 'Workout data is invalid',
+        creatingLocalSession: 'Creating local session...',
+        sessionCreatedSuccessfully: 'Session created successfully!',
+        errorOccurred: 'Error occurred',
+        
+        // Workout Session UI
+        sets: 'Sets',
+        series: 'Series',
+        reps: 'Reps',
+        weight: 'Weight',
+        rir: 'RIR',
+        minutes: 'Minutes',
+        seconds: 'Seconds',
+        configureRestTime: 'Configure rest time:',
+        addObservations: 'Add your observations about this exercise...',
+        unnamedExercise: 'Unnamed Exercise',
+        unnamedWorkout: 'Unnamed Workout',
+        addSet: 'Add Set',
+        selectedTime: 'Selected time:',
+        duration: 'Duration',
+        volume: 'Volume',
+        addExercise: 'Add Exercise',
     },
     'pt-BR': {
         // --- Auth & Validation ---
@@ -422,6 +519,29 @@ export const translations = {
         fat: 'Gordura',
         substitutes: 'Substitutos:',
 
+        // --- Loading & Error Messages ---
+        loadingData: 'Carregando dados...',
+        couldNotLoadProgress: 'Não foi possível carregar o progresso para esta data.',
+        couldNotLoadDietPlan: 'Não foi possível carregar seu plano de dieta.',
+        macronutrients: 'Macronutrientes',
+        recentWorkouts: 'Treinos Recentes',
+        noWorkoutsLast7Days: 'Nenhum treino registrado nos últimos 7 dias',
+        viewDetails: 'Ver Detalhes',
+        exercises: 'exercícios',
+        series: 'séries',
+
+        // --- Workout Screen ---
+        loadingWorkouts: 'Carregando treinos...',
+        couldNotLoadWorkouts: 'Não foi possível carregar treinos.',
+        tryAgain: 'Tentar Novamente',
+        myWorkouts: 'Meus Treinos',
+        thisWeek: 'Esta semana',
+        noWorkoutsFound: 'Nenhum treino encontrado',
+        contactPersonalTrainer: 'Contate seu treinador pessoal para receber seus treinos',
+        startWorkout: 'Iniciar Treino',
+        moreExercises: 'mais exercícios',
+        estimatedDuration: 'Duração Estimada',
+
         // --- Add/Track Screens ---
         addMeal: 'Adicionar Refeição',
         trackByDescription: 'Adicionar por Descrição',
@@ -497,6 +617,28 @@ export const translations = {
 
         // Track By photo
         photoPermissionRequired: "Permissão para acessar fotos é necessária!",
+
+        // Workout Session
+        activeWorkoutSession: 'Active Workout Session',
+        finishWorkout: 'Finish Workout',
+        discardWorkout: 'Discard Workout',
+        addSet: 'Add Set',
+        addExercise: 'Add Exercise',
+        restTime: 'Rest Time',
+        exerciseNotes: 'Exercise Notes',
+        addNotesHere: 'Add notes here...',
+        previous: 'Previous',
+        reps: 'Reps',
+        kg: 'KG',
+        settings: 'Settings',
+        confirmFinishWorkout: 'Do you want to finish the workout session?',
+        confirmDiscardWorkout: 'Are you sure you want to discard this workout? All data will be lost.',
+        restFinished: 'Rest finished!',
+        timeForNextSet: 'Time for the next set!',
+        loadingSession: 'Loading session...',
+        complete: 'Concluir',
+        save: 'Salvar',
+        selectedTime: 'Tempo selecionado:',
 
         // Teacher Section
         manageStudents: 'Gerenciar Alunos',
@@ -627,10 +769,82 @@ export const translations = {
         editDiet: 'Editar Dieta',
         dietSavedSuccess: 'Dieta salva com sucesso!',
 
-        noWorkoutsFound: 'Nenhum treino encontrado',
         selectDayOfWeek: 'Selecionar Dia da Semana',
         noExercisesAdded: 'Nenhum exercício adicionado',
         workout: 'Treino',
         goBack: 'Voltar',
+
+        // --- Profile/Menu ---
+        profile_title: 'Perfil',
+        profile_account: 'Conta',
+        profile_settings: 'Configurações',
+        profile_personalData: 'Dados Pessoais',
+        profile_editInfo: 'Editar informações do perfil',
+        profile_progress: 'Progresso',
+        profile_weightHistory: 'Histórico de peso e medidas',
+        profile_charts: 'Gráficos',
+        profile_viewProgress: 'Visualizar progresso',
+        profile_personalTrainer: 'Personal Trainer',
+        profile_manageConnection: 'Gerenciar conexão',
+        profile_notifications: 'Notificações',
+        profile_configureReminders: 'Configurar lembretes',
+        profile_privacy: 'Privacidade',
+        profile_securitySettings: 'Configurações de segurança',
+        profile_help: 'Ajuda',
+        profile_faqSupport: 'FAQ e suporte',
+        profile_theme: 'Tema',
+        profile_darkMode: 'Modo escuro',
+        profile_lightMode: 'Modo claro',
+        profile_signOut: 'Sair da Conta',
+
+        // --- Tabs/Bottom Navigation ---
+        tab_home: 'Início',
+        tab_diet: 'Dieta',
+        tab_workout: 'Treino',
+        tab_profile: 'Perfil',
+        // --- Quick Actions ---
+        quick_add: 'Adicionar',
+        quick_addMeal: 'Adicionar Refeição',
+        quick_trackByDescription: 'Rastrear por Descrição',
+        quick_trackByPhoto: 'Rastrear por Foto',
+        quick_addWater: 'Adicionar Água',
+        
+        // Alert Messages
+        discardWorkoutTitle: 'Descartar Treino',
+        discardWorkoutMessage: 'Tem certeza que deseja descartar este treino? Todos os dados serão perdidos.',
+        discard: 'Descartar',
+        finishWorkoutTitle: 'Finalizar Treino',
+        finishWorkoutMessage: 'Deseja finalizar a sessão de treino?',
+        finish: 'Finalizar',
+        errorTitle: 'Erro',
+        couldNotFinishWorkout: 'Não foi possível finalizar o treino. Tente novamente.',
+        ok: 'OK',
+        
+        // Debug Status Messages
+        initializing: 'Inicializando...',
+        invalidParametersRedirecting: 'Parâmetros inválidos - Redirecionando...',
+        analyzingWorkoutData: 'Analisando dados do treino...',
+        workoutDataInvalid: 'Dados do treino são inválidos',
+        creatingLocalSession: 'Criando sessão local...',
+        sessionCreatedSuccessfully: 'Sessão criada com sucesso!',
+        errorOccurred: 'Erro ocorreu',
+        
+        // Workout Session UI
+        sets: 'Séries',
+        series: 'Séries',
+        reps: 'Repetições',
+        weight: 'Peso',
+        rir: 'RIR',
+        minutes: 'Minutos',
+        seconds: 'Segundos',
+        configureRestTime: 'Configure o tempo de descanso:',
+        addObservations: 'Adicione suas observações sobre este exercício...',
+        unnamedExercise: 'Exercício sem nome',
+        unnamedWorkout: 'Treino sem nome',
+        addSet: 'Adicionar Série',
+        selectedTime: 'Tempo selecionado:',
+        duration: 'Duração',
+        volume: 'Volume',
+        addExercise: 'Adicionar Exercício',
     }
 };

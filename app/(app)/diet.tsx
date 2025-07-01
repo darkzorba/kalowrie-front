@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useLocalization } from '../../contexts/LocalizationContext';
-import { StyledText } from '../../components/StyledText';
-import apiService from '../../services/apiService';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
+import { StyledText } from '../../components/StyledText';
+import { useLocalization } from '../../contexts/LocalizationContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import apiService from '../../services/apiService';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -97,7 +97,7 @@ export default function DietScreen() {
                     const response = await apiService<{diet_dict:DietData}>('/user/diet/', 'GET');
                     setDietData(response.diet_dict);
                 } catch (e: any) {
-                    setError(e.message || 'Could not load your diet plan.');
+                    setError(e.message || t('couldNotLoadDietPlan'));
                 } finally {
                     setIsLoading(false);
                 }
