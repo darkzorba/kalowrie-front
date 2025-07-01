@@ -27,7 +27,7 @@ interface WorkoutSet {
     id: string;
     weight: string;
     reps: string;
-    rir: string; 
+    rir: string;
     completed: boolean;
     previousWeight?: string;
     previousReps?: string;
@@ -39,7 +39,7 @@ interface SessionExercise {
     name: string;
     sets: WorkoutSet[];
     notes: string;
-    restTime: number; 
+    restTime: number;
     isResting: boolean;
     restStartTime?: Date;
     targetMinReps: number;
@@ -84,8 +84,14 @@ export default function ActiveWorkoutScreen() {
     const { colors } = useTheme();
     const { t } = useLocalization();
     const router = useRouter();
-    const { workoutData } = useLocalSearchParams();
+    const params = useLocalSearchParams();
+    const { workoutData } = params;
     const { showMinimizedWorkout, hideMinimizedWorkout, resetTrigger, clearResetTrigger } = useWorkoutForm();
+
+
+    console.log('🔍 Active-workout montado, params:', params);
+    console.log('🔍 workoutData:', workoutData);
+    console.log('🔍 Tipo do workoutData:', typeof workoutData);
 
     const [session, setSession] = useState<WorkoutSession | null>(null);
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -100,102 +106,104 @@ export default function ActiveWorkoutScreen() {
     const [activeRestTimer, setActiveRestTimer] = useState<{exerciseId: string, timerId: any} | null>(null);
     const [originalWorkoutData, setOriginalWorkoutData] = useState<any>(null);
     const [sessionId, setSessionId] = useState<string | null>(null);
+    const [debugStatus, setDebugStatus] = useState<string>('Inicializando...');
 
-    
+
     const SESSION_KEY = 'kalowrie_workout_session';
 
-    
+
     const [sessionCache, setSessionCache] = useState<{[key: string]: string}>({});
 
-    
+
     const getStoredSessionId = async (workoutId: string): Promise<string | null> => {
         try {
-            
+
             const cacheKey = `workout_${workoutId}`;
             if (sessionCache[cacheKey]) {
-                
+
                 return sessionCache[cacheKey];
             }
 
-            
+
             if (Platform.OS !== 'ios') {
                 try {
                     const storedSessionId = await AsyncStorage.getItem(`${SESSION_KEY}_${workoutId}`);
                     if (storedSessionId) {
-                        
+
                         setSessionCache(prev => ({ ...prev, [cacheKey]: storedSessionId }));
-                        
+
                         return storedSessionId;
                     }
                 } catch (storageError) {
-                    
+
                 }
             } else {
-                
+
             }
 
             return null;
         } catch (error) {
-            
+
             return null;
         }
     };
 
-    
+
     const storeSessionId = async (workoutId: string, sessionId: string): Promise<void> => {
         try {
             const cacheKey = `workout_${workoutId}`;
-            
-            
-            setSessionCache(prev => ({ ...prev, [cacheKey]: sessionId }));
-            
 
-            
+
+            setSessionCache(prev => ({ ...prev, [cacheKey]: sessionId }));
+
+
+
             if (Platform.OS !== 'ios') {
                 try {
                     await AsyncStorage.setItem(`${SESSION_KEY}_${workoutId}`, sessionId);
-                    
+
                 } catch (storageError) {
-                    
+
                 }
             }
         } catch (error) {
-            
+
         }
     };
 
-    
+
     const removeStoredSessionId = async (workoutId: string): Promise<void> => {
         try {
             const cacheKey = `workout_${workoutId}`;
-            
-            
+
+
             setSessionCache(prev => {
                 const newCache = { ...prev };
                 delete newCache[cacheKey];
                 return newCache;
             });
-            
 
-            
+
+
             if (Platform.OS !== 'ios') {
                 try {
+
                     await AsyncStorage.removeItem(`${SESSION_KEY}_${workoutId}`);
-                    
+
                 } catch (storageError) {
-                    
+
                 }
             }
         } catch (error) {
-            
+
         }
     };
 
-    
-    const minutes = Array.from({ length: 11 }, (_, i) => ({ label: `${i}`, value: i })); 
-    const seconds = Array.from({ length: 60 }, (_, i) => ({ label: `${i.toString().padStart(2, '0')}`, value: i })); 
 
-    
+    const minutes = Array.from({ length: 11 }, (_, i) => ({ label: `${i}`, value: i }));
+    const seconds = Array.from({ length: 60 }, (_, i) => ({ label: `${i.toString().padStart(2, '0')}`, value: i }));
+
+
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
@@ -203,32 +211,18 @@ export default function ActiveWorkoutScreen() {
         return () => clearInterval(timer);
     }, []);
 
-    
+
     useEffect(() => {
         if (resetTrigger && resetTrigger > 0) {
-
-
-            
-
+            // Se vier um trigger de reset enquanto não há sessão ativa, apenas limpamos estados.
+            console.log('🔄 resetTrigger detectado na montagem, limpando e prosseguindo');
             resetWorkoutSession();
-            
-
             clearResetTrigger();
-            
-
-            setTimeout(() => {
-
-                router.back();
-            }, 100);
         }
     }, [resetTrigger]);
 
-    
-    useEffect(() => {
-        hideMinimizedWorkout();
-    }, []);
 
-    
+
     useEffect(() => {
         return () => {
             if (activeRestTimer) {
@@ -237,18 +231,35 @@ export default function ActiveWorkoutScreen() {
         };
     }, [activeRestTimer]);
 
-    
+
     useEffect(() => {
+        console.log('🔍 useEffect executado, workoutData:', workoutData);
+        console.log('🔍 workoutData é truthy?', !!workoutData);
+
         if (workoutData) {
             try {
+                setDebugStatus('Recebendo dados do treino...');
+                console.log('🔍 Tentando parsear workoutData...');
                 const workout = JSON.parse(workoutData as string);
+                console.log('🔍 Workout parseado:', workout);
+                setDebugStatus('Dados parseados, inicializando...');
+
                 initializeSession(workout);
             } catch (error) {
-                
+                console.log('🔍 Erro ao parsear:', error);
+                setDebugStatus('Erro ao parsear dados: ' + error);
+
                 router.back();
             }
         } else {
-            router.back();
+            console.log('🔍 Nenhum workoutData recebido!');
+            console.log('🔍 Todos os parâmetros:', params);
+            setDebugStatus('Nenhum dado de treino recebido - Parâmetros: ' + JSON.stringify(params));
+
+
+            setTimeout(() => {
+                router.back();
+            }, 3000);
         }
     }, [workoutData]);
 
@@ -258,8 +269,16 @@ export default function ActiveWorkoutScreen() {
 
             if (activeRestTimer) {
                 clearInterval(activeRestTimer.timerId);
+                setActiveRestTimer(null);
             }
-            
+
+
+            setSession(null);
+            setSessionCache({});
+            setOriginalWorkoutData(null);
+            setSessionId(null);
+            setDebugStatus('Limpando componente...');
+
 
 
         };
@@ -267,9 +286,10 @@ export default function ActiveWorkoutScreen() {
 
     const initializeSession = (workoutData: any) => {
         try {
-            
+            setDebugStatus('Validando dados do treino...');
+
             if (!workoutData || !Array.isArray(workoutData.exercises_list)) {
-                
+                setDebugStatus('Dados inválidos detectados');
                 Alert.alert(
                     'Erro',
                     'Dados do treino são inválidos. Voltando para a tela anterior.',
@@ -278,36 +298,73 @@ export default function ActiveWorkoutScreen() {
                 return;
             }
 
-            
-            setOriginalWorkoutData(workoutData);
-            
-            
-            const sessionExercises: SessionExercise[] = workoutData.exercises_list.map((exercise: any, index: number) => {
-                const sets: WorkoutSet[] = Array.from({ length: exercise.sets || 3 }, (_, setIndex) => ({
-                    id: `${index}-${setIndex}`,
-                    weight: '',
-                    reps: '',
-                    rir: '',
-                    completed: false,
-                    previousWeight: '', 
-                    previousReps: '',   
-                    previousRir: ''     
-                }));
+            setDebugStatus('Limpando cache anterior...');
 
-                return {
-                    id: index.toString(),
-                    name: exercise.exercise_name || 'Exercício sem nome',
-                    sets,
-                    notes: '',
-                    restTime: 120, 
-                    isResting: false,
-                    targetMinReps: exercise.min_reps || 8,
-                    targetMaxReps: exercise.max_reps || 12,
-                    targetSets: exercise.sets || 3,
-                    exercise_image: exercise.exercise_image || '',
-                    observations: exercise.observations || null
-                };
-            });
+            setSessionCache({});
+
+            setOriginalWorkoutData(workoutData);
+
+            setDebugStatus('Criando sessão local...');
+            console.log('🛠 chamando createSessionWithData');
+            createSessionWithData(workoutData);
+
+            setDebugStatus('Carregando dados da API...');
+            loadWorkoutSessionData(workoutData);
+        } catch (error) {
+            setDebugStatus('Erro na inicialização: ' + error);
+            Alert.alert(
+                'Erro',
+                'Não foi possível inicializar o treino. Tente novamente.',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+        }
+    };
+
+    const createSessionWithData = (workoutData: any) => {
+        console.log('🛠 dentro de createSessionWithData');
+        try {
+            setDebugStatus('Mapeando exercícios...');
+
+            if (!Array.isArray(workoutData.exercises_list) || workoutData.exercises_list.length === 0) {
+                throw new Error('A lista de exercícios está vazia.');
+            }
+
+            const sessionExercises: SessionExercise[] = workoutData.exercises_list
+                .filter((exercise: any) => exercise && typeof exercise === 'object')
+                .map((exercise: any, index: number) => {
+                    // Garantir número seguro de séries
+                    let setsCount = Number(exercise.sets);
+                    if (isNaN(setsCount) || setsCount <= 0) setsCount = 3;
+
+                    const sets: WorkoutSet[] = Array.from({ length: setsCount }, (_, setIndex) => ({
+                        id: `${index}-${setIndex}`,
+                        weight: '',
+                        reps: '',
+                        rir: '',
+                        completed: false,
+                        previousWeight: '',
+                        previousReps: '',
+                        previousRir: ''
+                    }));
+
+                    return {
+                        id: index.toString(),
+                        name: exercise.exercise_name || 'Exercício sem nome',
+                        sets,
+                        notes: '',
+                        restTime: 120,
+                        isResting: false,
+                        targetMinReps: Number(exercise.min_reps) || 8,
+                        targetMaxReps: Number(exercise.max_reps) || 12,
+                        targetSets: setsCount,
+                        exercise_image: exercise.exercise_image || '',
+                        observations: exercise.observations ?? null
+                    } as SessionExercise;
+                });
+
+            if (sessionExercises.length === 0) {
+                throw new Error('Não foi possível mapear exercícios válidos.');
+            }
 
             const newSession: WorkoutSession = {
                 id: Date.now().toString(),
@@ -318,87 +375,88 @@ export default function ActiveWorkoutScreen() {
             };
 
             setSession(newSession);
-
-            
-            loadWorkoutSessionData(workoutData);
-        } catch (error) {
-            
-            Alert.alert(
-                'Erro',
-                'Não foi possível inicializar o treino. Tente novamente.',
-                [{ text: 'OK', onPress: () => router.back() }]
-            );
+            console.log('🛠 sessão criada OK');
+            setDebugStatus('Sessão criada com sucesso!');
+        } catch (err: any) {
+            console.error('Erro ao criar sessão', err);
+            setDebugStatus('Erro ao criar sessão: ' + (err?.message || err));
+            Alert.alert('Erro', 'Não foi possível criar a sessão de treino.', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
         }
     };
 
     const loadWorkoutSessionData = async (workoutData: any) => {
         try {
             const workoutId = workoutData.id || workoutData.workout_id;
-            
-            
-            const storedSessionId = await getStoredSessionId(workoutId.toString());
-            
-            if (storedSessionId) {
-                
-                setSessionId(storedSessionId);
-                
-            } else {
-                
-                try {
-                    const sessionResponse = await createWorkoutSession(workoutId) as CreateSessionResponse;
-                    
-                    
-                    if (sessionResponse?.session_id) {
-                        setSessionId(sessionResponse.session_id);
-                        await storeSessionId(workoutId.toString(), sessionResponse.session_id);
-                        
-                    }
-                } catch (sessionError) {
-                    
-                    
-                }
-            }
-            
-            
+
+
+
+
+            await removeStoredSessionId(workoutId.toString());
+
             try {
-                const previousSessionData = await getPreviousWorkoutSession(workoutId) as PreviousSessionResponse;
-                
-                
-                if (previousSessionData && 
-                    previousSessionData.status && 
-                    Array.isArray(previousSessionData.previous_session_list)) {
-                    
-                    
-                    updateSessionWithPreviousData(previousSessionData.previous_session_list);
+                const sessionResponse = await createWorkoutSession(workoutId) as CreateSessionResponse;
+
+
+                if (sessionResponse?.session_id) {
+                    setSessionId(sessionResponse.session_id);
+                    await storeSessionId(workoutId.toString(), sessionResponse.session_id);
+
+
+                    loadPreviousSessionData(workoutId);
+
                 } else {
-                    
+
+
                 }
-            } catch (previousError) {
-                
-                
+            } catch (sessionError) {
+
+
+
             }
         } catch (error) {
-            
+
+        }
+    };
+
+    const loadPreviousSessionData = async (workoutId: number) => {
+        try {
+            const previousSessionData = await getPreviousWorkoutSession(workoutId) as PreviousSessionResponse;
+
+
+            if (previousSessionData &&
+                previousSessionData.status &&
+                Array.isArray(previousSessionData.previous_session_list)) {
+
+
+                updateSessionWithPreviousData(previousSessionData.previous_session_list);
+            } else {
+
+            }
+        } catch (previousError) {
+
+
         }
     };
 
     const updateSessionWithPreviousData = (previousSessionList: PreviousExerciseData[]) => {
         try {
-            
-            
+
+
             setSession(currentSession => {
                 if (!currentSession || !originalWorkoutData) {
-                    
+
                     return currentSession;
                 }
 
-                
+
                 if (!Array.isArray(previousSessionList)) {
-                    
+
                     return currentSession;
                 }
 
-                
+
                 const previousDataMap = new Map<number, PreviousExerciseData>();
                 previousSessionList.forEach(exercise => {
                     if (exercise && typeof exercise.exercise_id === 'number') {
@@ -408,31 +466,31 @@ export default function ActiveWorkoutScreen() {
 
                 const updatedExercises = currentSession.exercises.map((exercise, exerciseIndex) => {
                     try {
-                        
+
                         if (!originalWorkoutData.exercises_list || !originalWorkoutData.exercises_list[exerciseIndex]) {
                             return exercise;
                         }
 
-                        
+
                         const workoutExercise = originalWorkoutData.exercises_list[exerciseIndex];
                         const exerciseId = workoutExercise?.id || workoutExercise?.exercise_id;
-                        
-                        
+
+
                         if (!exerciseId || isNaN(Number(exerciseId))) {
                             return exercise;
                         }
 
-                        
+
                         const previousExerciseData = previousDataMap.get(Number(exerciseId));
-                        
+
                         if (previousExerciseData && Array.isArray(previousExerciseData.sets)) {
                             const updatedSets = exercise.sets.map((set, setIndex) => {
                                 try {
-                                    
+
                                     const previousSet = previousExerciseData.sets.find(
                                         prevSet => prevSet && prevSet.set_number === setIndex + 1
                                     );
-                                    
+
                                     if (previousSet) {
                                         const updatedSet = {
                                             ...set,
@@ -440,31 +498,31 @@ export default function ActiveWorkoutScreen() {
                                             previousReps: previousSet.reps_done != null ? String(previousSet.reps_done) : '',
                                             previousRir: previousSet.reps_in_reserve != null ? String(previousSet.reps_in_reserve) : ''
                                         };
-                                        
+
                                         return updatedSet;
                                     }
                                     return set;
                                 } catch (setError) {
-                                    
+
                                     return set;
                                 }
                             });
-                            
+
                             return { ...exercise, sets: updatedSets };
                         }
                         return exercise;
                     } catch (exerciseError) {
-                        
+
                         return exercise;
                     }
                 });
 
-                
+
                 return { ...currentSession, exercises: updatedExercises };
             });
         } catch (error) {
-            
-            
+
+
         }
     };
 
@@ -556,7 +614,7 @@ export default function ActiveWorkoutScreen() {
         const exercise = session?.exercises.find(ex => ex.id === exerciseId);
         if (!exercise) return;
 
-        
+
         if (activeRestTimer) {
             clearInterval(activeRestTimer.timerId);
             setRestTimers(prev => ({ ...prev, [activeRestTimer.exerciseId]: exercise.restTime }));
@@ -570,7 +628,7 @@ export default function ActiveWorkoutScreen() {
                 if (newTime <= 0) {
                     clearInterval(timer);
                     setActiveRestTimer(null);
-                    
+
                     Alert.alert('Descanso finalizado!', 'É hora da próxima série!');
                     return { ...prev, [exerciseId]: 0 };
                 }
@@ -668,14 +726,14 @@ export default function ActiveWorkoutScreen() {
 
     const resetWorkoutSession = () => {
 
-        
+
 
         if (activeRestTimer) {
             clearInterval(activeRestTimer.timerId);
             setActiveRestTimer(null);
 
         }
-        
+
 
         setSession(null);
         setRestTimers({});
@@ -683,13 +741,15 @@ export default function ActiveWorkoutScreen() {
         setSessionId(null);
         setOriginalWorkoutData(null);
         setSessionCache({});
-        
+        setDebugStatus('Inicializando...');
+
 
         setShowNotesModal(false);
         setShowRestModal(false);
         setSelectedExerciseId('');
         setSelectedRestExerciseId('');
-        
+
+
 
     };
 
@@ -699,14 +759,19 @@ export default function ActiveWorkoutScreen() {
             if (originalWorkoutData) {
                 const workoutId = originalWorkoutData.id || originalWorkoutData.workout_id;
                 await removeStoredSessionId(workoutId.toString());
+
             }
-            
+
 
             hideMinimizedWorkout();
-            
+            clearResetTrigger();
+
 
             resetWorkoutSession();
-            
+
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
 
         } catch (error) {
 
@@ -715,22 +780,11 @@ export default function ActiveWorkoutScreen() {
         }
     };
 
-    const discardWorkout = () => {
-        Alert.alert(
-            'Descartar Treino',
-            'Tem certeza que deseja descartar este treino? Todos os dados serão perdidos.',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                { 
-                    text: 'Descartar', 
-                    style: 'destructive',
-                    onPress: async () => {
-                        await performDiscardWorkout();
-                        router.back();
-                    }
-                }
-            ]
-        );
+    const discardWorkout = async () => {
+
+        await performDiscardWorkout();
+        router.replace('/(app)/workout');
+
     };
 
     const finishWorkout = () => {
@@ -755,7 +809,7 @@ export default function ActiveWorkoutScreen() {
                                 const exerciseTotalKgs = calculateExerciseTotalKgs(exercise);
 
                                 const sets = exercise.sets
-                                    .filter(set => set.completed) 
+                                    .filter(set => set.completed)
                                     .map((set, setIndex) => ({
                                         set_number: setIndex + 1,
                                         reps: parseInt(set.reps) || 0,
@@ -769,7 +823,7 @@ export default function ActiveWorkoutScreen() {
                                     total_kgs: exerciseTotalKgs,
                                     sets
                                 };
-                            }).filter(exercise => exercise.sets.length > 0); 
+                            }).filter(exercise => exercise.sets.length > 0);
 
                             const sessionData = {
                                 workout_id: originalWorkoutData.id || originalWorkoutData.workout_id,
@@ -780,20 +834,24 @@ export default function ActiveWorkoutScreen() {
                             };
 
                             await finishWorkoutSession(sessionData);
-                            
+
 
                             const workoutId = originalWorkoutData.id || originalWorkoutData.workout_id;
                             await removeStoredSessionId(workoutId.toString());
-                            
+
+
 
                             hideMinimizedWorkout();
-                            
+
 
                             resetWorkoutSession();
-                            
-                            router.back();
+
+
+                            setTimeout(() => {
+                                router.back();
+                            }, 100);
                         } catch (error) {
-                            
+
                             Alert.alert(
                                 'Erro',
                                 'Não foi possível finalizar o treino. Tente novamente.',
@@ -819,7 +877,7 @@ export default function ActiveWorkoutScreen() {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                     <StyledText style={[styles.loadingText, { color: colors.placeholderText }]}>
-                        {t('loading')}
+                        {debugStatus}
                     </StyledText>
                 </View>
             </SafeAreaView>
@@ -828,7 +886,7 @@ export default function ActiveWorkoutScreen() {
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.appBackground }]}>
-            
+
             <View style={[styles.header, { backgroundColor: colors.card }]}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity
@@ -855,7 +913,7 @@ export default function ActiveWorkoutScreen() {
                 </View>
             </View>
 
-            
+
             <View style={[styles.statsSection, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
                 <View style={styles.statItem}>
                     <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>Duração</StyledText>
@@ -863,14 +921,14 @@ export default function ActiveWorkoutScreen() {
                         {formatElapsedTime(session.startTime)}
                     </StyledText>
                 </View>
-                
+
                 <View style={styles.statItem}>
                     <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>Volume</StyledText>
                     <StyledText style={[styles.statValue, { color: colors.text }]}>
                         {calculateWorkoutTotalKgs().toFixed(0)} kg
                     </StyledText>
                 </View>
-                
+
                 <View style={styles.statItem}>
                     <StyledText style={[styles.statLabel, { color: colors.placeholderText }]}>Séries</StyledText>
                     <StyledText style={[styles.statValue, { color: colors.text }]}>
@@ -882,7 +940,7 @@ export default function ActiveWorkoutScreen() {
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {session.exercises.map((exercise, exerciseIndex) => (
                     <View key={exercise.id} style={[styles.exerciseCard, { backgroundColor: colors.card }]}>
-                        
+
                         <View style={styles.exerciseHeader}>
                             <View style={styles.exerciseImageContainer}>
                                 <Image
@@ -896,7 +954,7 @@ export default function ActiveWorkoutScreen() {
                                     {exercise.name}
                                 </StyledText>
 
-                                
+
                                 {exercise.observations && (
                                     <View style={styles.observationsContainer}>
                                         <Ionicons name="information-circle-outline" size={14} color={colors.placeholderText} />
@@ -915,7 +973,7 @@ export default function ActiveWorkoutScreen() {
                                     </StyledText>
                                 </TouchableOpacity>
 
-                                
+
                                 <TouchableOpacity
                                     style={styles.restContainer}
                                     onPress={() => openRestModal(exercise.id)}
@@ -932,9 +990,9 @@ export default function ActiveWorkoutScreen() {
                             </View>
                         </View>
 
-                        
+
                         <View style={styles.setsTable}>
-                            
+
                             <View style={[styles.tableHeader, { backgroundColor: colors.inputBackground }]}>
                                 <StyledText style={[styles.headerCell, { color: colors.text, flex: 0.8 }]}>SÉRIE</StyledText>
                                 <StyledText style={[styles.headerCell, { color: colors.text, flex: 1.2 }]}>ANTERIOR</StyledText>
@@ -944,7 +1002,7 @@ export default function ActiveWorkoutScreen() {
                                 <View style={[styles.headerCell, { flex: 0.5 }]} />
                             </View>
 
-                            
+
                             {exercise.sets.map((set, setIndex) => (
                                 <View key={set.id} style={[
                                     styles.tableRow,
@@ -958,8 +1016,8 @@ export default function ActiveWorkoutScreen() {
                                     </StyledText>
 
                                     <StyledText style={[styles.previousData, { color: colors.placeholderText }]}>
-                                        {(set.previousWeight !== '' && set.previousWeight !== undefined) && 
-                                         (set.previousReps !== '' && set.previousReps !== undefined) ?
+                                        {(set.previousWeight !== '' && set.previousWeight !== undefined) &&
+                                        (set.previousReps !== '' && set.previousReps !== undefined) ?
                                             `${set.previousWeight}kg x ${set.previousReps}${set.previousRir && set.previousRir !== '' ? ` @${set.previousRir}` : ''}` :
                                             '-'
                                         }
@@ -1030,7 +1088,7 @@ export default function ActiveWorkoutScreen() {
                             ))}
                         </View>
 
-                        
+
                         <TouchableOpacity
                             style={[styles.addSetButton, { borderColor: colors.border }]}
                             onPress={() => addSet(exercise.id)}
@@ -1043,11 +1101,11 @@ export default function ActiveWorkoutScreen() {
                     </View>
                 ))}
 
-                
+
                 <TouchableOpacity
                     style={[styles.addExerciseButton, { backgroundColor: colors.primary }]}
                     onPress={() => {
-                        
+
                     }}
                 >
                     <Ionicons name="add" size={24} color={BaseColors.white} />
@@ -1055,7 +1113,7 @@ export default function ActiveWorkoutScreen() {
                 </TouchableOpacity>
             </ScrollView>
 
-            
+
             <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
                 <TouchableOpacity style={styles.footerButton}>
                     <Ionicons name="settings-outline" size={20} color={colors.text} />
@@ -1075,7 +1133,7 @@ export default function ActiveWorkoutScreen() {
                 </TouchableOpacity>
             </View>
 
-            
+
             <Modal
                 visible={showNotesModal}
                 animationType="slide"
@@ -1120,7 +1178,7 @@ export default function ActiveWorkoutScreen() {
                 </SafeAreaView>
             </Modal>
 
-            
+
             <Modal
                 visible={showRestModal}
                 animationType="slide"

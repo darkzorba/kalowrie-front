@@ -120,12 +120,19 @@ export default function WorkoutScreen() {
     };
 
     const startWorkout = (workout: TrainingWorkout) => {
+        console.log('🚀 startWorkout chamado com:', workout);
+        const workoutDataString = JSON.stringify(workout);
+        console.log('🚀 workoutData serializado:', workoutDataString);
+        console.log('🚀 Tamanho dos dados:', workoutDataString.length, 'caracteres');
+        
         router.push({
             pathname: '/(app)/active-workout',
             params: {
-                workoutData: JSON.stringify(workout)
+                workoutData: workoutDataString
             }
         });
+        
+        console.log('🚀 Navegação executada!');
     };
 
     if (isLoading) {
